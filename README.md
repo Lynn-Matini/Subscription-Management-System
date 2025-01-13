@@ -1,9 +1,10 @@
 # Subscription-Management-System
-Group 17
-
-Real-World Use Case: Automate subscriptions for SaaS, newsletters, or streaming platforms.
 Description: Manage recurring payments using smart contracts.
+GROUP 17
+<hr/>
+Real-World Use Case: Automate subscriptions for SaaS, newsletters, or streaming platforms.
+<hr/>
 Features:
-Subscription creation with pricing and renewal terms.
-Automated payments using tokens.
-Notifications for expiring subscriptions.
+1️⃣ Subscription creation with pricing and renewal terms.
+2️⃣ Automated payments using tokens.
+3️⃣ Notifications for expiring subscriptions.
