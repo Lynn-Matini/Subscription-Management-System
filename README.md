@@ -1,6 +1,6 @@
 # Subscription-Management-System
+<h2>GROUP 17</h2>
 Automate subscriptions for SaaS, newsletters, or streaming platforms.
-GROUP 17
 
 Features:
 1️⃣ Subscription creation with pricing and renewal terms.
