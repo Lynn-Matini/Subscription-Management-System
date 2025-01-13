@@ -1,6 +1,7 @@
 # Subscription-Management-System
-<h2>GROUP 17</h2>
-Automate subscriptions for SaaS, newsletters, or streaming platforms.
+<h3>GROUP 17</h3>
+<h3>Automate subscriptions for SaaS, newsletters, or streaming platforms.</h3>
+
 <p>
 Features:
   <br/>
