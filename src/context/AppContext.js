@@ -18,6 +18,8 @@ export const AppProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [darkMode, setDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
+  const [selectedPlan, setSelectedPlan] = useState(null);
 
   const addNotification = (message) => {
     setNotifications((prevNotifications) => [...prevNotifications, message]);
@@ -39,6 +41,10 @@ export const AppProvider = ({ children }) => {
     setDarkMode,
     isLoading,
     setIsLoading,
+    selectedService,
+    setSelectedService,
+    selectedPlan,
+    setSelectedPlan,
     AVAX_CHAIN_ID,
     CONTRACT_ADDRESS,
   };
