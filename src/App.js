@@ -9,15 +9,34 @@ import SubscriptionsList from './components/SubscriptionsList';
 import Notifications from './components/Notifications';
 import ConnectWallet from './components/ConnectWallet';
 import ServiceIcons from './components/ServiceIcons';
-import { FaMoon, FaSun } from 'react-icons/fa';
+import { FaMoon, FaSun, FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function App() {
   const { account, darkMode, setDarkMode, notifications } = useContext(AppContext);
   const [selectedService, setSelectedService] = useState(null);
+  const [showFullAddress, setShowFullAddress] = useState(false);
+
+  const handleBack = () => {
+    setSelectedService(null);
+  };
+
+  const formatAddress = (address) => {
+    if (!address) return '';
+    return showFullAddress ? address : `${address.slice(0, 6)}...${address.slice(-4)}`;
+  };
 
   return (
     <div className={`App ${darkMode ? 'dark-mode' : ''}`}>
       <div className="top-bar">
+        {account && selectedService && (
+          <button 
+            className="icon-button back-button"
+            onClick={handleBack}
+            aria-label="Back to services"
+          >
+            <FaArrowLeft />
+          </button>
+        )}
         <div className="logo">
           <h1>Subscription Manager</h1>
         </div>
@@ -42,7 +61,18 @@ function App() {
           </div>
         ) : (
           <div>
-            <p className="account-info">Connected: {account}</p>
+            <div className="account-info-container">
+              <p className="account-info">
+                Connected: {formatAddress(account)}
+                <button
+                  className="icon-button address-toggle"
+                  onClick={() => setShowFullAddress(!showFullAddress)}
+                  aria-label="Toggle address visibility"
+                >
+                  {showFullAddress ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </p>
+            </div>
             {selectedService ? (
               <>
                 <CreateSubscription selectedService={selectedService} />

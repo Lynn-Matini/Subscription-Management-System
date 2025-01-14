@@ -24,7 +24,6 @@ function SubscriptionsList() {
   const fetchSubscriptions = useCallback(async (force = false) => {
     if (!contract || !account) return;
     
-    // Prevent frequent refetching (minimum 5 seconds between fetches)
     const now = Date.now();
     if (!force && now - lastFetchTime < 5000) {
       return;
@@ -33,10 +32,12 @@ function SubscriptionsList() {
     setIsLoading(true);
     try {
       await checkNetwork();
-      const count = Number(await contract.methods.subscriptionCount().call());
+      const count = await contract.methods.subscriptionCount().call();
       
-      if (count === 0) {
+      if (count === '0' || Number(count) === 0) {
         setSubscriptions([]);
+        setLastFetchTime(now);
+        setIsLoading(false);
         return;
       }
 
@@ -52,7 +53,11 @@ function SubscriptionsList() {
           ...sub,
           id: index + 1,
         }))
-        .filter(sub => sub.subscriber.toLowerCase() === account.toLowerCase());
+        .filter(sub => 
+          sub.subscriber.toLowerCase() === account.toLowerCase() && // Only current user's subs
+          Number(sub.startTime) > 0 && // Only started subscriptions
+          Number(sub.startTime) > (Date.now()/1000 - 30*24*60*60) // Only last 30 days
+        );
 
       // Batch fetch statuses
       const statusPromises = userSubs.map(sub => 
@@ -67,14 +72,22 @@ function SubscriptionsList() {
       
       const statuses = await Promise.all(statusPromises);
       
-      const formattedSubs = userSubs.map((sub, i) => ({
-        id: sub.id,
-        price: Number(sub.price),
-        duration: Number(sub.duration),
-        startTime: Number(sub.startTime),
-        subscriber: sub.subscriber,
-        ...statuses[i]
-      }));
+      // Filter out inactive subscriptions
+      const formattedSubs = userSubs
+        .map((sub, i) => ({
+          id: sub.id,
+          price: Number(sub.price),
+          duration: Number(sub.duration),
+          startTime: Number(sub.startTime),
+          subscriber: sub.subscriber,
+          ...statuses[i]
+        }))
+        .filter(sub => 
+          !sub.isExpired && 
+          !sub.isCancelled && 
+          sub.isActive && 
+          Number(sub.timeRemaining) > 0
+        ); // Only show active, non-expired, non-cancelled subs with remaining time
 
       setSubscriptions(formattedSubs);
       setLastFetchTime(now);

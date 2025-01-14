@@ -264,7 +264,7 @@ button:disabled {
   background-color: inherit;
   z-index: 1000;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  box-sizing: border-box; /* Ensure padding is included in width */
+  box-sizing: border-box;
 }
 
 .logo {
@@ -568,5 +568,109 @@ button:disabled {
   
   .controls {
     padding-right: 0.5rem;
+  }
+}
+
+/* Add back button styles */
+.back-button {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1001;
+}
+
+.back-button:hover {
+  background-color: rgba(0,0,0,0.1);
+}
+
+.dark-mode .back-button {
+  color: #fff;
+}
+
+.dark-mode .back-button:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+/* Update top-bar to accommodate back button */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: inherit;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-sizing: border-box;
+}
+
+/* Adjust responsive styles for back button */
+@media (max-width: 768px) {
+  .back-button {
+    left: 0.5rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .back-button {
+    position: static;
+    transform: none;
+    margin-right: auto;
+  }
+  
+  .top-bar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+/* Add styles for account info container and toggle */
+.account-info-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.account-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-family: monospace;
+}
+
+.dark-mode .account-info {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.address-toggle {
+  font-size: 1rem;
+  width: 30px;
+  height: 30px;
+  padding: 0.3rem;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.address-toggle:hover {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .account-info {
+    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+  }
+
+  .address-toggle {
+    width: 24px;
+    height: 24px;
   }
 }
