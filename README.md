@@ -11,5 +11,4 @@ Features:
     <br/>
 3️⃣ Notifications for expiring subscriptions.
 
-trial branch changes
 
