@@ -11,7 +11,5 @@ Features:
     <br/>
 3️⃣ Notifications for expiring subscriptions.
 
-changes:
-1. added a new feature to the subscription management system that allows users to create subscriptions with pricing and renewal terms.
-</p>
+trial branch changes
 
