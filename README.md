@@ -1,4 +1,5 @@
 # Subscription-Management-System
+
 <h3>GROUP 17</h3>
 <h3>Automate subscriptions for SaaS, newsletters, or streaming platforms.</h3>
 
@@ -10,7 +11,3 @@ Features:
 2️⃣ Automated payments using tokens.
     <br/>
 3️⃣ Notifications for expiring subscriptions.
-
-
-I'm back
-
