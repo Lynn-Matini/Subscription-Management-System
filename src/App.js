@@ -10,7 +10,7 @@ import Notifications from './components/Notifications';
 import ConnectWallet from './components/ConnectWallet';
 
 function App() {
-  const { account, darkMode, setDarkMode } = useContext(AppContext);
+  const { account, darkMode, setDarkMode, notifications } = useContext(AppContext);
 
   return (
     <div className={`App ${darkMode ? 'dark-mode' : ''}`}>
@@ -28,9 +28,9 @@ function App() {
             <CreateSubscription />
             <ProcessPayment />
             <SubscriptionDetails />
-            <Notifications />
           </div>
         )}
+        <Notifications notifications={notifications} />
       </header>
     </div>
   );
