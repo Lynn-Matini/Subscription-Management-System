@@ -1,0 +1,60 @@
+import React from 'react';
+import { FaNewspaper, FaVideo, FaCode, FaMusic, FaGraduationCap } from 'react-icons/fa';
+
+function ServiceIcons({ onServiceSelect }) {
+  const services = [
+    {
+      id: 1,
+      name: "Nation Media",
+      type: "newsletter",
+      icon: <FaNewspaper />,
+      description: "Digital news subscription"
+    },
+    {
+      id: 2,
+      name: "Showmax Kenya",
+      type: "streaming",
+      icon: <FaVideo />,
+      description: "Video streaming service"
+    },
+    {
+      id: 3,
+      name: "DSTV",
+      type: "streaming",
+      icon: <FaVideo />,
+      description: "Premium TV streaming service"
+    },
+    {
+      id: 4,
+      name: "Mdundo",
+      type: "streaming",
+      icon: <FaMusic />,
+      description: "Music streaming platform"
+    },
+    {
+      id: 5,
+      name: "Elimu Library",
+      type: "saas",
+      icon: <FaGraduationCap />,
+      description: "Educational content platform"
+    }
+  ];
+
+  return (
+    <div className="services-grid">
+      {services.map(service => (
+        <div 
+          key={service.id} 
+          className="service-card"
+          onClick={() => onServiceSelect(service)}
+        >
+          <div className="service-icon">{service.icon}</div>
+          <h3>{service.name}</h3>
+          <p>{service.description}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default ServiceIcons; 

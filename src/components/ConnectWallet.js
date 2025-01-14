@@ -20,70 +20,38 @@ function ConnectWallet() {
     setConnecting(true);
     setIsLoading(true);
     try {
-      if (typeof window.avalanche !== 'undefined') {
-        const provider = window.avalanche;
-        const web3Instance = new Web3(provider);
+      if (!window.ethereum) {
+        addNotification('Please install Core Wallet or MetaMask.');
+        return;
+      }
 
+      // Request account access
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      
+      // Check if we're on the right network (Fuji C-Chain testnet)
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      if (chainId !== '0xa869') { // Fuji testnet chain ID
         try {
-          const accounts = await provider.request({
-            method: 'eth_requestAccounts',
+          await window.ethereum.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0xa869' }],
           });
-          
-          if (accounts && accounts.length > 0) {
-            const chainId = await web3Instance.eth.getChainId();
-            if (chainId.toString(16) !== AVAX_CHAIN_ID) {
-              try {
-                await provider.request({
-                  method: 'wallet_switchEthereumChain',
-                  params: [{ chainId: `0x${AVAX_CHAIN_ID}` }],
-                });
-              } catch (switchError) {
-                // Handle chain switch error
-                if (switchError.code === 4902) {
-                  addNotification(
-                    "Please add Avalanche network manually in your wallet."
-                  );
-                  return;
-                } else if (switchError.code === 4001) {
-                  addNotification('User rejected network switch.');
-                  return;
-                } else {
-                  console.error("Couldn't switch to Avalanche network:", switchError);
-                  addNotification(
-                    'Please switch to Avalanche network manually in your wallet.'
-                  );
-                  return;
-                }
-              }
-            }
-
-            // Set up web3 instance and contract
-            setWeb3(web3Instance);
-            setAccount(accounts[0]);
-            
-            // Make sure SubscriptionManagerABI is properly imported
-            if (!SubscriptionManagerABI || !CONTRACT_ADDRESS) {
-              throw new Error('Missing ABI or contract address');
-            }
-
-            const contractInstance = new web3Instance.eth.Contract(
-              SubscriptionManagerABI,
-              CONTRACT_ADDRESS
-            );
-            setContract(contractInstance);
-          }
-        } catch (accountError) {
-          if (accountError.code === 4001) {
-            addNotification('Please connect your wallet to continue.');
-          } else {
-            console.error('Error connecting wallet:', accountError);
-            addNotification('Error connecting wallet. Please try again.');
-          }
+        } catch (switchError) {
+          addNotification('Please switch to Fuji C-Chain testnet');
           return;
         }
-      } else {
-        addNotification('Please install Core Wallet to continue.');
       }
+
+      const web3Instance = new Web3(window.ethereum);
+      const contractInstance = new web3Instance.eth.Contract(
+        SubscriptionManagerABI,
+        CONTRACT_ADDRESS
+      );
+
+      setWeb3(web3Instance);
+      setContract(contractInstance);
+      setAccount(accounts[0]);
+      addNotification('Wallet connected successfully!');
     } catch (error) {
       console.error('Error connecting wallet:', error);
       addNotification('Error connecting wallet.');
