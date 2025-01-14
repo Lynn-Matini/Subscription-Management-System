@@ -1,76 +1,53 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import AppContext from '../context/AppContext';
-import Web3 from 'web3';
-import SubscriptionManagerABI from '../SubscriptionManagerABI.json';
+import { saveUserToFirestore } from '../firebase/userService';
+import { FaWallet, FaSignOutAlt } from 'react-icons/fa';
 
 function ConnectWallet() {
-  const {
-    setWeb3,
-    setAccount,
-    setContract,
-    addNotification,
-    isLoading,
-    setIsLoading,
-    AVAX_CHAIN_ID,
-    CONTRACT_ADDRESS,
-  } = useContext(AppContext);
-  const [connecting, setConnecting] = useState(false);
+  const { setAccount, account, setSelectedService, setSelectedPlan } = useContext(AppContext);
 
   const connectWallet = async () => {
-    setConnecting(true);
-    setIsLoading(true);
     try {
-      if (!window.ethereum) {
-        addNotification('Please install Core Wallet or MetaMask.');
-        return;
+      if (window.ethereum) {
+        const accounts = await window.ethereum.request({
+          method: 'eth_requestAccounts',
+        });
+        const userAccount = accounts[0];
+        setAccount(userAccount);
+        
+        // Save user to Firestore when they connect
+        await saveUserToFirestore(userAccount);
+      } else {
+        alert('Please install MetaMask or another Web3 wallet');
       }
-
-      // Request account access
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      
-      // Check if we're on the right network (Fuji C-Chain testnet)
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-      if (chainId !== '0xa869') { // Fuji testnet chain ID
-        try {
-          await window.ethereum.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: '0xa869' }],
-          });
-        } catch (switchError) {
-          addNotification('Please switch to Fuji C-Chain testnet');
-          return;
-        }
-      }
-
-      const web3Instance = new Web3(window.ethereum);
-      const contractInstance = new web3Instance.eth.Contract(
-        SubscriptionManagerABI,
-        CONTRACT_ADDRESS
-      );
-
-      setWeb3(web3Instance);
-      setContract(contractInstance);
-      setAccount(accounts[0]);
-      addNotification('Wallet connected successfully!');
     } catch (error) {
       console.error('Error connecting wallet:', error);
-      addNotification('Error connecting wallet.');
-    } finally {
-      setConnecting(false);
-      setIsLoading(false);
     }
   };
 
+  const disconnectWallet = () => {
+    setAccount(null);
+    setSelectedService(null); // Reset selected service
+    setSelectedPlan(null); // Reset selected plan
+  };
+
   return (
-    <div>
-      <button onClick={connectWallet} disabled={connecting || isLoading}>
-        {connecting
-          ? 'Connecting...'
-          : isLoading
-          ? 'Loading...'
-          : 'Connect Wallet'}
-      </button>
-    </div>
+    <button 
+      onClick={account ? disconnectWallet : connectWallet} 
+      className={`connect-wallet-button ${account ? 'connected' : ''}`}
+    >
+      {account ? (
+        <>
+          <FaSignOutAlt className="wallet-icon" />
+          Disconnect
+        </>
+      ) : (
+        <>
+          <FaWallet className="wallet-icon" />
+          Connect Wallet
+        </>
+      )}
+    </button>
   );
 }
 

@@ -1,5 +1,5 @@
 // frontend/src/App.js
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import './App.css';
 import AppContext from './context/AppContext';
 import CreateSubscription from './components/CreateSubscription';
@@ -10,14 +10,27 @@ import Notifications from './components/Notifications';
 import ConnectWallet from './components/ConnectWallet';
 import ServiceIcons from './components/ServiceIcons';
 import { FaMoon, FaSun, FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
+import SubscriptionPlans from './components/SubscriptionPlans';
+import { seedSubscriptionPlans } from './firebase/seedData';
 
 function App() {
   const { account, darkMode, setDarkMode, notifications } = useContext(AppContext);
   const [selectedService, setSelectedService] = useState(null);
   const [showFullAddress, setShowFullAddress] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
+  useEffect(() => {
+    seedSubscriptionPlans().catch(console.error);
+  }, []);
 
   const handleBack = () => {
-    setSelectedService(null);
+    if (selectedPlan) {
+      // If a plan is selected, go back to plans view
+      setSelectedPlan(null);
+    } else {
+      // If no plan is selected, go back to services
+      setSelectedService(null);
+    }
   };
 
   const formatAddress = (address) => {
@@ -25,14 +38,18 @@ function App() {
     return showFullAddress ? address : `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
+  const handleSelectPlan = (plan) => {
+    setSelectedPlan(plan);
+  };
+
   return (
     <div className={`App ${darkMode ? 'dark-mode' : ''}`}>
       <div className="top-bar">
-        {account && selectedService && (
+        {account && (selectedService || selectedPlan) && (
           <button 
             className="icon-button back-button"
             onClick={handleBack}
-            aria-label="Back to services"
+            aria-label={selectedPlan ? "Back to plans" : "Back to services"}
           >
             <FaArrowLeft />
           </button>
@@ -75,10 +92,23 @@ function App() {
             </div>
             {selectedService ? (
               <>
-                <CreateSubscription selectedService={selectedService} />
-                <SubscriptionsList />
-                <ProcessPayment />
-                <SubscriptionDetails />
+                {!selectedPlan ? (
+                  <SubscriptionPlans 
+                    selectedService={selectedService}
+                    onSelectPlan={handleSelectPlan}
+                  />
+                ) : (
+                  <>
+                    <CreateSubscription 
+                      selectedService={selectedService}
+                      selectedPlan={selectedPlan}
+                      onBack={() => setSelectedPlan(null)}
+                    />
+                    <SubscriptionsList />
+                    <ProcessPayment />
+                    <SubscriptionDetails />
+                  </>
+                )}
               </>
             ) : (
               <ServiceIcons onServiceSelect={setSelectedService} />

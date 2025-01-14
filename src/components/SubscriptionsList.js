@@ -1,11 +1,53 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import AppContext from '../context/AppContext';
+import { getUserSubscriptions } from '../firebase/userService';
 
 function SubscriptionsList() {
   const { contract, account, addNotification, isLoading, setIsLoading, web3, darkMode } = useContext(AppContext);
   const [subscriptions, setSubscriptions] = useState([]);
   const [networkId, setNetworkId] = useState(null);
   const [lastFetchTime, setLastFetchTime] = useState(0);
+
+  const fetchBlockchainSubscriptions = async () => {
+    const count = await contract.methods.subscriptionCount().call();
+    
+    if (count === '0' || Number(count) === 0) {
+      return [];
+    }
+
+    // Batch fetch subscriptions
+    const promises = [];
+    for (let i = 1; i <= count; i++) {
+      promises.push(contract.methods.subscriptions(i).call());
+      promises.push(contract.methods.getSubscriptionStatus(i).call());
+    }
+
+    const results = await Promise.all(promises);
+    const subs = [];
+    
+    // Process results in pairs (subscription and its status)
+    for (let i = 0; i < results.length; i += 2) {
+      const sub = results[i];
+      const status = results[i + 1];
+      
+      // Only include subscriptions belonging to the current user
+      if (sub.subscriber.toLowerCase() === account.toLowerCase()) {
+        subs.push({
+          id: sub.id,
+          price: Number(sub.price),
+          duration: Number(sub.duration),
+          startTime: Number(sub.startTime),
+          subscriber: sub.subscriber,
+          isActive: status.isActive,
+          isCancelled: status.isCancelled,
+          isExpired: status.isExpired,
+          timeRemaining: Number(status.timeRemaining)
+        });
+      }
+    }
+
+    return subs;
+  };
 
   const checkNetwork = useCallback(async () => {
     if (!web3) return;
@@ -32,64 +74,24 @@ function SubscriptionsList() {
     setIsLoading(true);
     try {
       await checkNetwork();
-      const count = await contract.methods.subscriptionCount().call();
       
-      if (count === '0' || Number(count) === 0) {
-        setSubscriptions([]);
-        setLastFetchTime(now);
-        setIsLoading(false);
-        return;
-      }
-
-      // Batch fetch subscriptions
-      const promises = [];
-      for (let i = 1; i <= count; i++) {
-        promises.push(contract.methods.subscriptions(i).call());
-      }
+      // Fetch subscriptions from both blockchain and Firestore
+      const [blockchainSubs, firestoreSubs] = await Promise.all([
+        fetchBlockchainSubscriptions(),
+        getUserSubscriptions(account)
+      ]);
       
-      const results = await Promise.all(promises);
-      const userSubs = results
-        .map((sub, index) => ({
+      // Merge and format subscriptions
+      const mergedSubs = blockchainSubs.map(sub => {
+        const firestoreSub = firestoreSubs.find(fs => fs.subscriptionId === sub.id);
+        return {
           ...sub,
-          id: index + 1,
-        }))
-        .filter(sub => 
-          sub.subscriber.toLowerCase() === account.toLowerCase() && // Only current user's subs
-          Number(sub.startTime) > 0 && // Only started subscriptions
-          Number(sub.startTime) > (Date.now()/1000 - 30*24*60*60) // Only last 30 days
-        );
+          serviceName: firestoreSub?.serviceName,
+          planName: firestoreSub?.planName,
+        };
+      });
 
-      // Batch fetch statuses
-      const statusPromises = userSubs.map(sub => 
-        contract.methods.getSubscriptionStatus(sub.id).call()
-          .catch(() => ({
-            isActive: false,
-            isCancelled: false,
-            isExpired: false,
-            timeRemaining: 0
-          }))
-      );
-      
-      const statuses = await Promise.all(statusPromises);
-      
-      // Filter out inactive subscriptions
-      const formattedSubs = userSubs
-        .map((sub, i) => ({
-          id: sub.id,
-          price: Number(sub.price),
-          duration: Number(sub.duration),
-          startTime: Number(sub.startTime),
-          subscriber: sub.subscriber,
-          ...statuses[i]
-        }))
-        .filter(sub => 
-          !sub.isExpired && 
-          !sub.isCancelled && 
-          sub.isActive && 
-          Number(sub.timeRemaining) > 0
-        ); // Only show active, non-expired, non-cancelled subs with remaining time
-
-      setSubscriptions(formattedSubs);
+      setSubscriptions(mergedSubs);
       setLastFetchTime(now);
     } catch (error) {
       console.error('Error fetching subscriptions:', error);
