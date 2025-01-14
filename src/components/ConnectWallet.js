@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react';
 import AppContext from '../context/AppContext';
 import Web3 from 'web3';
+import SubscriptionManagerABI from '../SubscriptionManagerABI.json';
 
 function ConnectWallet() {
   const {
@@ -10,10 +11,10 @@ function ConnectWallet() {
     addNotification,
     isLoading,
     setIsLoading,
+    AVAX_CHAIN_ID,
+    CONTRACT_ADDRESS,
   } = useContext(AppContext);
   const [connecting, setConnecting] = useState(false);
-  const { AVAX_CHAIN_ID, SubscriptionManagerABI, CONTRACT_ADDRESS } =
-    useContext(AppContext);
 
   const connectWallet = async () => {
     setConnecting(true);
@@ -23,48 +24,26 @@ function ConnectWallet() {
         const provider = window.avalanche;
         const web3Instance = new Web3(provider);
 
-        // First request account access
         try {
           const accounts = await provider.request({
             method: 'eth_requestAccounts',
           });
           
-          // Only proceed with chain switch if we have account access
           if (accounts && accounts.length > 0) {
             const chainId = await web3Instance.eth.getChainId();
             if (chainId.toString(16) !== AVAX_CHAIN_ID) {
               try {
                 await provider.request({
                   method: 'wallet_switchEthereumChain',
-                  params: [{ chainId: AVAX_CHAIN_ID }],
+                  params: [{ chainId: `0x${AVAX_CHAIN_ID}` }],
                 });
               } catch (switchError) {
                 // Handle chain switch error
                 if (switchError.code === 4902) {
-                  try {
-                    await provider.request({
-                      method: 'wallet_addEthereumChain',
-                      params: [
-                        {
-                          chainId: AVAX_CHAIN_ID,
-                          chainName: 'Avalanche Mainnet C-Chain',
-                          nativeCurrency: {
-                            name: 'Avalanche',
-                            symbol: 'AVAX',
-                            decimals: 18,
-                          },
-                          rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
-                          blockExplorerUrls: ['https://snowtrace.io/'],
-                        },
-                      ],
-                    });
-                  } catch (addError) {
-                    console.error("Couldn't add Avalanche network:", addError);
-                    addNotification(
-                      "Please add Avalanche network manually in your wallet."
-                    );
-                    return;
-                  }
+                  addNotification(
+                    "Please add Avalanche network manually in your wallet."
+                  );
+                  return;
                 } else if (switchError.code === 4001) {
                   addNotification('User rejected network switch.');
                   return;
@@ -81,6 +60,12 @@ function ConnectWallet() {
             // Set up web3 instance and contract
             setWeb3(web3Instance);
             setAccount(accounts[0]);
+            
+            // Make sure SubscriptionManagerABI is properly imported
+            if (!SubscriptionManagerABI || !CONTRACT_ADDRESS) {
+              throw new Error('Missing ABI or contract address');
+            }
+
             const contractInstance = new web3Instance.eth.Contract(
               SubscriptionManagerABI,
               CONTRACT_ADDRESS
@@ -100,8 +85,8 @@ function ConnectWallet() {
         addNotification('Please install Core Wallet to continue.');
       }
     } catch (error) {
-      console.error('Error connecting to wallet:', error);
-      addNotification('Error connecting to wallet.');
+      console.error('Error connecting wallet:', error);
+      addNotification('Error connecting wallet.');
     } finally {
       setConnecting(false);
       setIsLoading(false);
