@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, writeBatch, doc, query, where } from 'firebase/firestore';
 import { db } from './config';
 
 const subscriptionPlans = [
@@ -6,7 +6,7 @@ const subscriptionPlans = [
   {
     serviceId: 1,
     name: "Monthly",
-    price: "10",
+    price: "0.01",
     duration: 30,
     features: [
       "Daily news access",
@@ -17,8 +17,8 @@ const subscriptionPlans = [
   },
   {
     serviceId: 1,
-    name: "Half Year",
-    price: "50",
+    name: "6 Months",
+    price: "0.05",
     duration: 180,
     features: [
       "All Monthly features",
@@ -30,11 +30,11 @@ const subscriptionPlans = [
   },
   {
     serviceId: 1,
-    name: "Annual",
-    price: "90",
+    name: "Yearly",
+    price: "0.08",
     duration: 365,
     features: [
-      "All Half Year features",
+      "All 6 Months features",
       "Exclusive content",
       "Priority customer support",
       "Multiple device access",
@@ -43,11 +43,11 @@ const subscriptionPlans = [
     ]
   },
 
-  // Netflix-like Streaming Plans
+  // Showmax Kenya Plans
   {
     serviceId: 2,
-    name: "Basic",
-    price: "15",
+    name: "Monthly",
+    price: "0.015",
     duration: 30,
     features: [
       "HD streaming",
@@ -58,22 +58,22 @@ const subscriptionPlans = [
   },
   {
     serviceId: 2,
-    name: "Standard",
-    price: "75",
+    name: "6 Months",
+    price: "0.025",
     duration: 180,
     features: [
       "Full HD streaming",
       "Watch on 2 devices",
       "Download shows",
       "No ads",
-      "Offline viewing",
-      "15% discount"
+      "15% discount",
+      "Offline viewing"
     ]
   },
   {
     serviceId: 2,
-    name: "Premium",
-    price: "140",
+    name: "Yearly",
+    price: "0.045",
     duration: 365,
     features: [
       "4K Ultra HD",
@@ -86,153 +86,194 @@ const subscriptionPlans = [
     ]
   },
 
-  // Developer Platform Plans
+  // DSTV Plans
   {
     serviceId: 3,
-    name: "Basic",
-    price: "20",
+    name: "Monthly",
+    price: "0.02",
     duration: 30,
     features: [
-      "Basic API access",
-      "100 requests/day",
-      "Community support",
-      "Basic documentation"
+      "Basic channels",
+      "SD quality",
+      "1 device",
+      "Basic support"
     ]
   },
   {
     serviceId: 3,
-    name: "Pro",
-    price: "100",
+    name: "6 Months",
+    price: "0.035",
     duration: 180,
     features: [
-      "Advanced API access",
-      "1000 requests/day",
+      "All channels",
+      "HD quality",
+      "2 devices",
+      "Premium support",
+      "Recording feature",
+      "15% discount"
+    ]
+  },
+  {
+    serviceId: 3,
+    name: "Yearly",
+    price: "0.06",
+    duration: 365,
+    features: [
+      "All 6 Months features",
+      "4K quality",
+      "4 devices",
       "Priority support",
-      "Advanced documentation",
-      "Custom integrations",
-      "15% discount"
-    ]
-  },
-  {
-    serviceId: 3,
-    name: "Enterprise",
-    price: "180",
-    duration: 365,
-    features: [
-      "Unlimited API access",
-      "Unlimited requests",
-      "24/7 dedicated support",
-      "Full documentation",
-      "Custom solutions",
+      "Unlimited recording",
       "25% discount",
-      "Dedicated account manager"
+      "Sports channels"
     ]
   },
 
-  // Music Streaming Plans
+  // Mdundo Plans
   {
     serviceId: 4,
-    name: "Basic",
-    price: "8",
+    name: "Monthly",
+    price: "0.008",
     duration: 30,
     features: [
-      "Ad-supported streaming",
-      "Basic audio quality",
-      "Mobile listening",
-      "Create playlists"
+      "Ad-free music",
+      "Basic quality",
+      "Offline mode",
+      "Basic playlists"
     ]
   },
   {
     serviceId: 4,
-    name: "Premium",
-    price: "40",
+    name: "6 Months",
+    price: "0.03",
     duration: 180,
     features: [
-      "Ad-free streaming",
       "High quality audio",
-      "Offline mode",
-      "Multi-device support",
+      "Custom playlists",
       "Lyrics access",
+      "Premium support",
       "15% discount"
     ]
   },
   {
     serviceId: 4,
-    name: "Family",
-    price: "70",
+    name: "Yearly",
+    price: "0.05",
     duration: 365,
     features: [
-      "Up to 6 accounts",
+      "All 6 Months features",
       "Highest quality audio",
-      "Offline mode",
-      "Multi-device support",
-      "Lyrics access",
+      "Unlimited downloads",
+      "Priority support",
       "25% discount",
-      "Parental controls"
+      "Early access to new releases"
     ]
   },
 
-  // Online Learning Plans
+  // Elimu Library Plans
   {
     serviceId: 5,
-    name: "Basic",
-    price: "25",
+    name: "Monthly",
+    price: "0.012",
     duration: 30,
     features: [
-      "Access to basic courses",
-      "Course completion certificates",
-      "Mobile learning",
-      "Basic assessments"
+      "Basic access",
+      "Download PDFs",
+      "Basic search",
+      "Community support"
     ]
   },
   {
     serviceId: 5,
-    name: "Professional",
-    price: "120",
+    name: "6 Months",
+    price: "0.04",
     duration: 180,
     features: [
-      "Access to all courses",
-      "Professional certificates",
-      "Mentor support",
-      "Practice exercises",
-      "Project reviews",
+      "Full access",
+      "Advanced search",
+      "Citation tools",
+      "Premium support",
       "15% discount"
     ]
   },
   {
     serviceId: 5,
-    name: "Master",
-    price: "200",
+    name: "Yearly",
+    price: "0.07",
     duration: 365,
     features: [
-      "All Professional features",
-      "Specialized certifications",
-      "1-on-1 mentoring",
-      "Career guidance",
-      "Job placement support",
+      "All 6 Months features",
+      "Research tools",
+      "API access",
+      "Priority support",
       "25% discount",
-      "Industry networking events"
+      "Exclusive webinars"
     ]
   }
 ];
 
-// Function to seed subscription plans
-export const seedSubscriptionPlans = async () => {
+// Function to clear existing plans
+const clearExistingPlans = async () => {
   try {
-    // Check if plans already exist
     const plansRef = collection(db, 'subscriptionPlans');
     const existingPlans = await getDocs(plansRef);
     
-    if (!existingPlans.empty) {
-      console.log('Plans already exist in the database');
-      return;
+    // Delete all existing plans
+    const deletePromises = existingPlans.docs.map(doc => 
+      deleteDoc(doc.ref)
+    );
+    
+    await Promise.all(deletePromises);
+    console.log('Cleared existing plans');
+  } catch (error) {
+    console.error('Error clearing plans:', error);
+    throw error;
+  }
+};
+
+// Function to seed subscription plans
+export const seedSubscriptionPlans = async () => {
+  try {
+    // Always clear existing plans first
+    await clearExistingPlans();
+
+    // Verify we have exactly 15 plans (3 plans for each of 5 services)
+    if (subscriptionPlans.length !== 15) {
+      throw new Error(`Expected 15 subscription plans, but found ${subscriptionPlans.length}`);
     }
 
-    // Add all plans
-    const addPromises = subscriptionPlans.map(plan => addDoc(plansRef, plan));
-    await Promise.all(addPromises);
+    // Add metadata to each plan
+    const plansToSeed = subscriptionPlans.map(plan => ({
+      ...plan,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }));
+
+    // Use batch write for atomic operation
+    const plansRef = collection(db, 'subscriptionPlans');
+    const batch = writeBatch(db);
+
+    // Add each plan with a unique document ID
+    plansToSeed.forEach(plan => {
+      // Create a unique document ID based on service and plan name
+      const uniqueId = `service${plan.serviceId}_${plan.name.toLowerCase().replace(/\s+/g, '_')}`;
+      const docRef = doc(plansRef, uniqueId);
+      batch.set(docRef, plan);
+    });
+
+    // Commit the batch
+    await batch.commit();
+    console.log(`Successfully seeded ${plansToSeed.length} subscription plans`);
+
+    // Verify the number of plans in Firestore
+    const verificationSnapshot = await getDocs(plansRef);
+    const actualCount = verificationSnapshot.size;
+    console.log(`Verification: ${actualCount} plans in database`);
     
-    console.log('Successfully seeded subscription plans');
+    if (actualCount !== 15) {
+      console.error(`Warning: Expected 15 plans, but found ${actualCount} in database`);
+    }
+
   } catch (error) {
     console.error('Error seeding subscription plans:', error);
     throw error;

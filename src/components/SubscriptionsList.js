@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import AppContext from '../context/AppContext';
 import { getUserSubscriptions } from '../firebase/userService';
+import CountdownTimer from './CountdownTimer';
+import Web3 from 'web3';
 
 function SubscriptionsList() {
   const { contract, account, addNotification, isLoading, setIsLoading, web3, darkMode } = useContext(AppContext);
@@ -9,44 +11,30 @@ function SubscriptionsList() {
   const [lastFetchTime, setLastFetchTime] = useState(0);
 
   const fetchBlockchainSubscriptions = async () => {
-    const count = await contract.methods.subscriptionCount().call();
-    
-    if (count === '0' || Number(count) === 0) {
-      return [];
-    }
-
-    // Batch fetch subscriptions
-    const promises = [];
-    for (let i = 1; i <= count; i++) {
-      promises.push(contract.methods.subscriptions(i).call());
-      promises.push(contract.methods.getSubscriptionStatus(i).call());
-    }
-
-    const results = await Promise.all(promises);
-    const subs = [];
-    
-    // Process results in pairs (subscription and its status)
-    for (let i = 0; i < results.length; i += 2) {
-      const sub = results[i];
-      const status = results[i + 1];
+    try {
+      const subscriptionCount = await contract.methods.subscriptionCount().call();
+      console.log('Total subscriptions:', subscriptionCount);
       
-      // Only include subscriptions belonging to the current user
-      if (sub.subscriber.toLowerCase() === account.toLowerCase()) {
-        subs.push({
-          id: sub.id,
-          price: Number(sub.price),
-          duration: Number(sub.duration),
-          startTime: Number(sub.startTime),
-          subscriber: sub.subscriber,
-          isActive: status.isActive,
-          isCancelled: status.isCancelled,
-          isExpired: status.isExpired,
-          timeRemaining: Number(status.timeRemaining)
-        });
+      const subscriptions = [];
+      for (let i = 1; i <= subscriptionCount; i++) {
+        try {
+          const subscription = await contract.methods.getSubscription(i).call();
+          if (subscription.subscriber.toLowerCase() === account.toLowerCase()) {
+            subscriptions.push({
+              id: i,
+              ...subscription
+            });
+          }
+        } catch (error) {
+          console.warn(`Skipping subscription ${i}:`, error.message);
+          continue;
+        }
       }
+      return subscriptions;
+    } catch (error) {
+      console.error('Error in fetchBlockchainSubscriptions:', error);
+      throw error;
     }
-
-    return subs;
   };
 
   const checkNetwork = useCallback(async () => {
@@ -75,29 +63,42 @@ function SubscriptionsList() {
     try {
       await checkNetwork();
       
-      // Fetch subscriptions from both blockchain and Firestore
-      const [blockchainSubs, firestoreSubs] = await Promise.all([
-        fetchBlockchainSubscriptions(),
-        getUserSubscriptions(account)
-      ]);
+      let blockchainSubs = [];
+      let firestoreSubs = [];
+
+      try {
+        blockchainSubs = await fetchBlockchainSubscriptions();
+      } catch (blockchainError) {
+        console.error('Error fetching blockchain subscriptions:', blockchainError);
+        addNotification('Error fetching blockchain data. Please try again.');
+      }
+
+      try {
+        firestoreSubs = await getUserSubscriptions(account);
+      } catch (firestoreError) {
+        console.error('Error fetching Firestore subscriptions:', firestoreError);
+        addNotification('Error fetching subscription details.');
+      }
       
       // Merge and format subscriptions
       const mergedSubs = blockchainSubs.map(sub => {
         const firestoreSub = firestoreSubs.find(fs => fs.subscriptionId === sub.id);
         return {
           ...sub,
-          serviceName: firestoreSub?.serviceName,
-          planName: firestoreSub?.planName,
+          serviceName: firestoreSub?.serviceName || 'Unknown Service',
+          planName: firestoreSub?.planName || 'Unknown Plan',
         };
       });
 
       setSubscriptions(mergedSubs);
       setLastFetchTime(now);
     } catch (error) {
-      console.error('Error fetching subscriptions:', error);
-      addNotification(error.message.includes('contract not deployed') 
-        ? 'Contract not deployed on this network. Please switch to Fuji C-Chain testnet.'
-        : 'Error fetching subscriptions.');
+      console.error('Error in fetchSubscriptions:', error);
+      if (error.message.includes('contract not deployed')) {
+        addNotification('Please switch to Fuji C-Chain testnet');
+      } else {
+        addNotification('Error fetching subscriptions. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -178,11 +179,11 @@ function SubscriptionsList() {
   };
 
   return (
-    <div className="subscriptions-list">
-      <div className="list-header">
+    <div className="subscriptions-container">
+      <div className="subscriptions-header">
         <h3>Your Subscriptions</h3>
-        <button onClick={() => fetchSubscriptions(true)} disabled={isLoading}>
-          Refresh List
+        <button onClick={() => fetchSubscriptions(true)} className="refresh-button">
+          Refresh
         </button>
       </div>
       
@@ -198,13 +199,18 @@ function SubscriptionsList() {
           {subscriptions.map((sub) => (
             <div key={sub.id} className={`subscription-card ${darkMode ? 'dark' : ''}`}>
               <h4>Subscription #{sub.id}</h4>
-              <p>Price: {sub.price} wei</p>
-              <p>Duration: {formatDuration(sub.duration)}</p>
-              <p>Start Time: {new Date(sub.startTime * 1000).toLocaleString()}</p>
-              <p>Status: {sub.isActive ? 'Active' : 'Inactive'}</p>
-              <p>Cancelled: {sub.isCancelled ? 'Yes' : 'No'}</p>
-              <p>Expired: {sub.isExpired ? 'Yes' : 'No'}</p>
-              <p>Time Remaining: {formatDuration(sub.timeRemaining)}</p>
+              <div className="subscription-details">
+                <p>Service: {sub.serviceName}</p>
+                <p>Plan: {sub.planName}</p>
+                <p>Price: {sub.price} AVAX</p>
+                <p>Status: {sub.isActive ? 'Active' : 'Inactive'}</p>
+                {sub.isActive && !sub.isCancelled && (
+                  <div className="time-remaining">
+                    <h5>Time Remaining:</h5>
+                    <CountdownTimer timeRemaining={sub.timeRemaining} />
+                  </div>
+                )}
+              </div>
               {!sub.isCancelled && (
                 <div className="card-actions">
                   {!sub.isActive && (

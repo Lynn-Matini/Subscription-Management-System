@@ -299,15 +299,20 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.3s ease;
+  color: #333;
+  transition: all 0.3s ease;
 }
 
 .icon-button:hover {
-  background-color: rgba(0,0,0,0.1);
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .icon-button {
+  color: #fff;
 }
 
 .dark-mode .icon-button:hover {
-  background-color: rgba(255,255,255,0.1);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .main-content {
@@ -578,6 +583,8 @@ button:disabled {
   top: 50%;
   transform: translateY(-50%);
   z-index: 1001;
+  color: #333;
+  margin-right: auto;
 }
 
 .back-button:hover {
@@ -814,50 +821,219 @@ button:disabled {
   }
 }
 
-/* Add styles for the subscription creation header */
-.subscription-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
+/* Update responsive styles */
+@media (max-width: 768px) {
+  .subscription-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .subscription-header h2 {
+    font-size: 1.5rem;
+  }
 }
 
-.back-to-plans-button {
+/* Countdown Timer Styles */
+.countdown-timer {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+}
+
+.dark-mode .countdown-timer {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 60px;
+}
+
+.countdown-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #007bff;
+}
+
+.dark-mode .countdown-value {
+  color: #61dafb;
+}
+
+.countdown-label {
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.dark-mode .countdown-label {
+  color: #999;
+}
+
+/* Update subscription card styles */
+.subscription-card {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.dark-mode .subscription-card {
+  background: #2a2a2a;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.subscription-details {
+  margin: 1rem 0;
+}
+
+.time-remaining {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .time-remaining {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.create-subscription-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.subscription-creation-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 2rem;
+}
+
+.dark .subscription-creation-card {
+  background: #2a2a2a;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.service-info {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark .service-info {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.plan-name {
+  display: block;
+  color: #666;
+  font-size: 1.1rem;
+  margin-top: 0.5rem;
+}
+
+.dark .plan-name {
+  color: #aaa;
+}
+
+.subscription-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin: 2rem 0;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+}
+
+.dark .detail-item {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.detail-icon {
+  font-size: 1.5rem;
+  color: #007bff;
+}
+
+.dark .detail-icon {
+  color: #61dafb;
+}
+
+.detail-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-label {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.dark .detail-label {
+  color: #aaa;
+}
+
+.detail-value {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.features-list {
+  margin: 2rem 0;
+}
+
+.features-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.features-list li {
+  padding: 0.5rem 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: transparent;
-  border: 1px solid #007bff;
-  color: #007bff;
-  border-radius: 4px;
+}
+
+.features-list li:before {
+  content: "✓";
+  color: #28a745;
+}
+
+.create-button {
+  width: 100%;
+  padding: 1rem;
+  font-size: 1.1rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
-.back-to-plans-button:hover {
-  background: rgba(0, 123, 255, 0.1);
+.create-button:hover {
+  background: #0056b3;
 }
 
-.dark-mode .back-to-plans-button {
-  border-color: #61dafb;
-  color: #61dafb;
+.create-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 
-.dark-mode .back-to-plans-button:hover {
-  background: rgba(97, 218, 251, 0.1);
-}
-
-.selected-plan {
-  font-size: 1.1rem;
-  color: #666;
-  margin-bottom: 1.5rem;
-  padding: 0.5rem;
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 4px;
-}
-
-.dark-mode .selected-plan {
-  color: #aaa;
-  background: rgba(255, 255, 255, 0.05);
+.dark .create-button:disabled {
+  background: #444;
 }

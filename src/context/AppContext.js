@@ -1,10 +1,12 @@
 // frontend/src/context/AppContext.js
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
+import Web3 from 'web3';
+import subscriptionABI from '../contracts/SubscriptionManager.json';
 
 const AppContext = createContext();
 
 const AVAX_CHAIN_ID = 'a86a';
-const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS || '0x25e5faa3a1c76d60fb9fdcd601368eacffc86d41';
+const CONTRACT_ADDRESS = '0x4402394519aff2b9e753c67f1b32bf93de184126';
 
 // Validate contract address is available
 if (!CONTRACT_ADDRESS) {
@@ -20,6 +22,7 @@ export const AppProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [networkVerified, setNetworkVerified] = useState(false);
 
   const addNotification = (message) => {
     setNotifications((prevNotifications) => [...prevNotifications, message]);
@@ -27,6 +30,81 @@ export const AppProvider = ({ children }) => {
       setNotifications((prevNotifications) => prevNotifications.slice(1));
     }, 5000);
   };
+
+  // Add this function to check network
+  const verifyNetwork = async () => {
+    if (!web3) return false;
+    
+    try {
+      const chainId = await web3.eth.getChainId();
+      const networkId = await web3.eth.net.getId();
+      console.log('Connected to Chain ID:', chainId);
+      console.log('Network ID:', networkId);
+      
+      // Fuji Testnet Chain ID is 43113
+      if (chainId !== 43113) {
+        addNotification('Please connect to Fuji C-Chain (Chain ID: 43113)');
+        setNetworkVerified(false);
+        return false;
+      }
+      
+      setNetworkVerified(true);
+      return true;
+    } catch (error) {
+      console.error('Network verification failed:', error);
+      setNetworkVerified(false);
+      return false;
+    }
+  };
+
+  // Initialize Web3 and contract when wallet is connected
+  useEffect(() => {
+    const initializeWeb3 = async () => {
+      if (window.ethereum && account) {
+        try {
+          const web3Instance = new Web3(window.ethereum);
+          setWeb3(web3Instance);
+          
+          const contractInstance = new web3Instance.eth.Contract(
+            subscriptionABI.abi,
+            CONTRACT_ADDRESS
+          );
+          setContract(contractInstance);
+
+          // Verify network after initializing web3
+          await verifyNetwork();
+        } catch (error) {
+          console.error('Error initializing Web3:', error);
+          addNotification('Error connecting to blockchain');
+        }
+      }
+    };
+
+    initializeWeb3();
+  }, [account]);
+
+  useEffect(() => {
+    const verifyContract = async () => {
+      if (web3 && contract) {
+        try {
+          const code = await web3.eth.getCode(CONTRACT_ADDRESS);
+          if (code === '0x' || code === '0x0') {
+            console.error('No contract found at address:', CONTRACT_ADDRESS);
+            addNotification('Contract not found at specified address');
+          } else {
+            console.log('Contract verified at:', CONTRACT_ADDRESS);
+            const count = await contract.methods.subscriptionCount().call();
+            console.log('Contract is responsive. Subscription count:', count);
+          }
+        } catch (error) {
+          console.error('Contract verification failed:', error);
+          addNotification('Error verifying contract. Please check network and address');
+        }
+      }
+    };
+
+    verifyContract();
+  }, [web3, contract, addNotification]);
 
   const value = {
     web3,
@@ -47,6 +125,8 @@ export const AppProvider = ({ children }) => {
     setSelectedPlan,
     AVAX_CHAIN_ID,
     CONTRACT_ADDRESS,
+    verifyNetwork,
+    networkVerified
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
