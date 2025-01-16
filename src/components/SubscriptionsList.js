@@ -5,16 +5,26 @@ import CountdownTimer from './CountdownTimer';
 import Web3 from 'web3';
 
 function SubscriptionsList() {
-  const { contract, account, addNotification, isLoading, setIsLoading, web3, darkMode } = useContext(AppContext);
+  const {
+    contract,
+    account,
+    addNotification,
+    isLoading,
+    setIsLoading,
+    web3,
+    darkMode,
+  } = useContext(AppContext);
   const [subscriptions, setSubscriptions] = useState([]);
   const [networkId, setNetworkId] = useState(null);
   const [lastFetchTime, setLastFetchTime] = useState(0);
 
   const fetchBlockchainSubscriptions = async () => {
     try {
-      const subscriptionCount = await contract.methods.subscriptionCount().call();
+      const subscriptionCount = await contract.methods
+        .subscriptionCount()
+        .call();
       console.log('Total subscriptions:', subscriptionCount);
-      
+
       const subscriptions = [];
       for (let i = 1; i <= subscriptionCount; i++) {
         try {
@@ -22,7 +32,7 @@ function SubscriptionsList() {
           if (subscription.subscriber.toLowerCase() === account.toLowerCase()) {
             subscriptions.push({
               id: i,
-              ...subscription
+              ...subscription,
             });
           }
         } catch (error) {
@@ -42,7 +52,9 @@ function SubscriptionsList() {
     try {
       const currentNetwork = await web3.eth.getChainId();
       if (networkId && currentNetwork !== networkId) {
-        addNotification('Network changed. Please switch back to Fuji C-Chain testnet.');
+        addNotification(
+          'Network changed. Please switch back to Fuji C-Chain testnet.'
+        );
         setSubscriptions([]);
       }
       setNetworkId(currentNetwork);
@@ -51,63 +63,83 @@ function SubscriptionsList() {
     }
   }, [web3, networkId, addNotification]);
 
-  const fetchSubscriptions = useCallback(async (force = false) => {
-    if (!contract || !account) return;
-    
-    const now = Date.now();
-    if (!force && now - lastFetchTime < 5000) {
-      return;
-    }
-    
-    setIsLoading(true);
-    try {
-      await checkNetwork();
-      
-      let blockchainSubs = [];
-      let firestoreSubs = [];
+  const fetchSubscriptions = useCallback(
+    async (force = false) => {
+      if (!contract || !account) return;
 
+      const now = Date.now();
+      if (!force && now - lastFetchTime < 5000) {
+        return;
+      }
+
+      setIsLoading(true);
       try {
-        blockchainSubs = await fetchBlockchainSubscriptions();
-      } catch (blockchainError) {
-        console.error('Error fetching blockchain subscriptions:', blockchainError);
-        addNotification('Error fetching blockchain data. Please try again.');
-      }
+        await checkNetwork();
 
-      try {
-        firestoreSubs = await getUserSubscriptions(account);
-      } catch (firestoreError) {
-        console.error('Error fetching Firestore subscriptions:', firestoreError);
-        addNotification('Error fetching subscription details.');
-      }
-      
-      // Merge and format subscriptions
-      const mergedSubs = blockchainSubs.map(sub => {
-        const firestoreSub = firestoreSubs.find(fs => fs.subscriptionId === sub.id);
-        return {
-          ...sub,
-          serviceName: firestoreSub?.serviceName || 'Unknown Service',
-          planName: firestoreSub?.planName || 'Unknown Plan',
-        };
-      });
+        let blockchainSubs = [];
+        let firestoreSubs = [];
 
-      setSubscriptions(mergedSubs);
-      setLastFetchTime(now);
-    } catch (error) {
-      console.error('Error in fetchSubscriptions:', error);
-      if (error.message.includes('contract not deployed')) {
-        addNotification('Please switch to Fuji C-Chain testnet');
-      } else {
-        addNotification('Error fetching subscriptions. Please try again.');
+        try {
+          blockchainSubs = await fetchBlockchainSubscriptions();
+        } catch (blockchainError) {
+          console.error(
+            'Error fetching blockchain subscriptions:',
+            blockchainError
+          );
+          addNotification('Error fetching blockchain data. Please try again.');
+        }
+
+        try {
+          firestoreSubs = await getUserSubscriptions(account);
+        } catch (firestoreError) {
+          console.error(
+            'Error fetching Firestore subscriptions:',
+            firestoreError
+          );
+          addNotification('Error fetching subscription details.');
+        }
+
+        // Merge and format subscriptions
+        const mergedSubs = blockchainSubs.map((sub) => {
+          const firestoreSub = firestoreSubs.find(
+            (fs) => fs.subscriptionId === sub.id
+          );
+          return {
+            ...sub,
+            serviceName: firestoreSub?.serviceName || 'Unknown Service',
+            planName: firestoreSub?.planName || 'Unknown Plan',
+          };
+        });
+
+        setSubscriptions(mergedSubs);
+        setLastFetchTime(now);
+      } catch (error) {
+        console.error('Error in fetchSubscriptions:', error);
+        if (error.message.includes('contract not deployed')) {
+          addNotification('Please switch to Fuji C-Chain testnet');
+        } else {
+          addNotification('Error fetching subscriptions. Please try again.');
+        }
+      } finally {
+        setIsLoading(false);
       }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [contract, account, addNotification, setIsLoading, checkNetwork, lastFetchTime]);
+    },
+    [
+      contract,
+      account,
+      addNotification,
+      setIsLoading,
+      checkNetwork,
+      lastFetchTime,
+    ]
+  );
 
   const handleCancel = async (subscriptionId) => {
     setIsLoading(true);
     try {
-      await contract.methods.cancelSubscription(subscriptionId).send({ from: account });
+      await contract.methods
+        .cancelSubscription(subscriptionId)
+        .send({ from: account });
       addNotification('Subscription cancelled successfully!');
       setTimeout(() => fetchSubscriptions(true), 2000);
     } catch (error) {
@@ -126,12 +158,11 @@ function SubscriptionsList() {
         .processPayment(subscriptionId)
         .send({ from: account, value: price });
       addNotification('Payment processed successfully!');
-      
+
       // Wait a bit for the blockchain to update
       setTimeout(() => {
         fetchSubscriptions();
       }, 2000);
-      
     } catch (error) {
       console.error('Error processing payment:', error);
       if (error.message.includes('wrong network')) {
@@ -146,7 +177,7 @@ function SubscriptionsList() {
 
   useEffect(() => {
     fetchSubscriptions();
-    
+
     if (window.ethereum) {
       window.ethereum.on('chainChanged', () => {
         checkNetwork();
@@ -157,16 +188,20 @@ function SubscriptionsList() {
     const handleSubscriptionCreated = () => {
       setTimeout(() => fetchSubscriptions(true), 2000);
     };
-    
+
     window.addEventListener('subscriptionCreated', handleSubscriptionCreated);
-    
+
     return () => {
-      window.removeEventListener('subscriptionCreated', handleSubscriptionCreated);
+      window.removeEventListener(
+        'subscriptionCreated',
+        handleSubscriptionCreated
+      );
       if (window.ethereum) {
         window.ethereum.removeListener('chainChanged', () => {});
       }
     };
-  }, [fetchSubscriptions, checkNetwork]);
+  }, []);
+  // }, [fetchSubscriptions, checkNetwork]);
 
   const formatDuration = (seconds) => {
     if (seconds < 60) return `${seconds} seconds`;
@@ -182,11 +217,14 @@ function SubscriptionsList() {
     <div className="subscriptions-container">
       <div className="subscriptions-header">
         <h3>Your Subscriptions</h3>
-        <button onClick={() => fetchSubscriptions(true)} className="refresh-button">
+        <button
+          onClick={() => fetchSubscriptions(true)}
+          className="refresh-button"
+        >
           Refresh
         </button>
       </div>
-      
+
       {isLoading ? (
         <p>Loading subscriptions...</p>
       ) : subscriptions.length === 0 ? (
@@ -197,7 +235,10 @@ function SubscriptionsList() {
       ) : (
         <div className="subscriptions-grid">
           {subscriptions.map((sub) => (
-            <div key={sub.id} className={`subscription-card ${darkMode ? 'dark' : ''}`}>
+            <div
+              key={sub.id}
+              className={`subscription-card ${darkMode ? 'dark' : ''}`}
+            >
               <h4>Subscription #{sub.id}</h4>
               <div className="subscription-details">
                 <p>Service: {sub.serviceName}</p>
@@ -214,7 +255,7 @@ function SubscriptionsList() {
               {!sub.isCancelled && (
                 <div className="card-actions">
                   {!sub.isActive && (
-                    <button 
+                    <button
                       onClick={() => processPayment(sub.id, sub.price)}
                       disabled={isLoading}
                       className="process-payment-button"
@@ -222,7 +263,7 @@ function SubscriptionsList() {
                       Process Payment
                     </button>
                   )}
-                  <button 
+                  <button
                     onClick={() => handleCancel(sub.id)}
                     disabled={isLoading}
                     className="cancel-button"

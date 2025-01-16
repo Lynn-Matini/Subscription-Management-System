@@ -10,7 +10,9 @@ const CONTRACT_ADDRESS = '0x4402394519aff2b9e753c67f1b32bf93de184126';
 
 // Validate contract address is available
 if (!CONTRACT_ADDRESS) {
-  console.error('Contract address not found. Make sure CONTRACT_ADDRESS is set in your .env file.');
+  console.error(
+    'Contract address not found. Make sure CONTRACT_ADDRESS is set in your .env file.'
+  );
 }
 
 export const AppProvider = ({ children }) => {
@@ -34,20 +36,20 @@ export const AppProvider = ({ children }) => {
   // Add this function to check network
   const verifyNetwork = async () => {
     if (!web3) return false;
-    
+
     try {
       const chainId = await web3.eth.getChainId();
       const networkId = await web3.eth.net.getId();
       console.log('Connected to Chain ID:', chainId);
       console.log('Network ID:', networkId);
-      
+
       // Fuji Testnet Chain ID is 43113
       if (chainId !== 43113) {
         addNotification('Please connect to Fuji C-Chain (Chain ID: 43113)');
         setNetworkVerified(false);
         return false;
       }
-      
+
       setNetworkVerified(true);
       return true;
     } catch (error) {
@@ -64,7 +66,7 @@ export const AppProvider = ({ children }) => {
         try {
           const web3Instance = new Web3(window.ethereum);
           setWeb3(web3Instance);
-          
+
           const contractInstance = new web3Instance.eth.Contract(
             subscriptionABI.abi,
             CONTRACT_ADDRESS
@@ -98,13 +100,16 @@ export const AppProvider = ({ children }) => {
           }
         } catch (error) {
           console.error('Contract verification failed:', error);
-          addNotification('Error verifying contract. Please check network and address');
+          addNotification(
+            'Error verifying contract. Please check network and address'
+          );
         }
       }
     };
 
     verifyContract();
-  }, [web3, contract, addNotification]);
+  }, []);
+  // }, [web3, contract, addNotification]);
 
   const value = {
     web3,
@@ -126,7 +131,7 @@ export const AppProvider = ({ children }) => {
     AVAX_CHAIN_ID,
     CONTRACT_ADDRESS,
     verifyNetwork,
-    networkVerified
+    networkVerified,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
