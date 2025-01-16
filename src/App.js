@@ -3,6 +3,7 @@ import React, { useContext, useState, useEffect } from 'react';
 import './App.css';
 import AppContext from './context/AppContext';
 import CreateSubscription from './components/CreateSubscription';
+import ProcessPayment from './components/ProcessPayment';
 import SubscriptionDetails from './components/SubscriptionDetails';
 import SubscriptionsList from './components/SubscriptionsList';
 import Notifications from './components/Notifications';
@@ -103,7 +104,9 @@ function App() {
                       selectedPlan={selectedPlan}
                       onBack={() => setSelectedPlan(null)}
                     />
-                    <SubscriptionsList selectedService={selectedService} />
+                    <SubscriptionsList />
+                    <ProcessPayment />
+                    <SubscriptionDetails />
                   </>
                 )}
               </>
