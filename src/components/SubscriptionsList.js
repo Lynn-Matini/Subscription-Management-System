@@ -2,7 +2,6 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import AppContext from '../context/AppContext';
 import { getUserSubscriptions } from '../firebase/userService';
 import CountdownTimer from './CountdownTimer';
-import Web3 from 'web3';
 
 function SubscriptionsList() {
   const {
