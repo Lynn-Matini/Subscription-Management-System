@@ -90,81 +90,72 @@ function CreateSubscription({ selectedService, selectedPlan }) {
         gasLimit
       });
 
-      // Send transaction
-      const result = await contract.methods
-        .createSubscription(subscriptionPrice, subscriptionDuration)
-        .send({ 
-          from: account,
-          gas: gasLimit
-        });
-
-      console.log('Transaction result:', result);
-      
-      // Get subscription ID from transaction logs
-      const subscriptionCreatedEvent = result.events.SubscriptionCreated;
-      console.log('Event data:', subscriptionCreatedEvent); // Debug log
-
-      if (!subscriptionCreatedEvent) {
-        console.error('Events from transaction:', result.events);
-        throw new Error('SubscriptionCreated event not found in transaction');
-      }
-
-      // Replace the current subscription ID extraction with this
-      const subscriptionId = Web3.utils.hexToNumber(subscriptionCreatedEvent.raw.data.slice(0, 66));
-      console.log('Created subscription ID:', subscriptionId);
-
-      if (!subscriptionId) {
-        // Custom serializer to handle BigInt values
-        const customStringify = (obj) => {
-          return JSON.stringify(obj, (key, value) => {
-            if (typeof value === 'bigint') {
-              return value.toString();
-            }
-            return value;
-          }, 2);
-        };
-
-        console.error('Full event data:', customStringify(subscriptionCreatedEvent));
-        throw new Error('Invalid subscription ID returned from transaction');
-      }
-
-      // Convert subscription ID to string if it's a BigInt
-      const subscriptionIdString = subscriptionId.toString();
-
-      // Get the subscription details from the contract
       try {
-        const subscription = await contract.methods.getSubscription(subscriptionIdString).call();
-        console.log('Raw subscription data:', subscription);
-        
-        await saveUserSubscription(account, {
-          id: subscriptionIdString,
-          price: subscription[0],        // price is first return value
-          duration: subscription[1],     // duration is second return value
-          startTime: subscription[2],    // startTime is third return value
-          subscriber: subscription[3],   // subscriber is fourth return value
-          isActive: subscription[4],     // isActive is fifth return value
-          isCancelled: subscription[5]   // isCancelled is sixth return value
-        }, selectedService, selectedPlan);
-        
-        addNotification(`Subscription created successfully for ${selectedService.name}!`);
-        window.dispatchEvent(new CustomEvent('subscriptionCreated'));
-      } catch (error) {
-        console.error('Error fetching subscription details:', error);
-        throw new Error('Failed to fetch subscription details after creation');
-      }
+        const result = await contract.methods
+          .createSubscription(subscriptionPrice, subscriptionDuration)
+          .send({
+            from: account,
+            gasLimit: gasLimit,
+          });
 
-      console.log('Full transaction result:', JSON.stringify(result, null, 2));
-      console.log('Events:', result.events);
-    } catch (error) {
-      console.error('Error creating subscription:', error);
-      if (error.message.includes('User denied')) {
-        addNotification('Transaction was cancelled');
-      } else if (error.message.includes('insufficient funds')) {
-        addNotification('Insufficient AVAX balance');
-      } else if (error.message.includes('execution reverted')) {
-        addNotification('Transaction failed. Please check your balance and try again.');
-      } else {
-        addNotification('Error creating subscription. Please try again.');
+        console.log('Transaction result:', result);
+
+        const subscriptionId = getSubscriptionIdFromEvent(result);
+
+        if (subscriptionId !== null) {
+          console.log('Created subscription ID:', subscriptionId);
+
+          try {
+            const subscription = await contract.methods
+              .getSubscription(subscriptionId)
+              .call();
+            console.log('Fetched subscription:', subscription);
+
+            await saveUserSubscription(
+              account,
+              { id: subscriptionId, ...subscription },
+              selectedService,
+              selectedPlan
+            );
+
+            addNotification(
+              `Subscription created successfully for ${selectedService.name}!`
+            );
+            window.dispatchEvent(new CustomEvent('subscriptionCreated'));
+          } catch (fetchError) {
+            console.error('Error fetching subscription details:', fetchError);
+            addNotification(
+              'Subscription created, but details could not be retrieved.'
+            );
+          }
+        } else {
+          console.error('Could not get subscription ID from event.');
+          addNotification(
+            'Subscription creation failed. Could not retrieve ID.'
+          );
+        }
+      } catch (error) {
+        console.error('Error creating subscription:', error);
+        let errorMessage = 'Error creating subscription. Please try again.';
+
+        if (error.message.includes('User denied transaction signature')) {
+          errorMessage = 'Transaction was cancelled';
+        } else if (error.message.includes('insufficient funds')) {
+          errorMessage = 'Insufficient AVAX balance';
+        } else if (error.message.includes('execution reverted')) {
+          try {
+            const revertReason = error.data.message.substring(
+              error.data.message.indexOf('reverted: ') + 'reverted: '.length
+            );
+            errorMessage = `Transaction reverted: ${revertReason}`;
+          } catch (e) {
+            errorMessage = 'Transaction reverted. Please check your input.';
+          }
+        } else if (error.message.includes('Internal JSON-RPC error.')) {
+          errorMessage = 'Network error. Please try again later.';
+        }
+
+        addNotification(errorMessage);
       }
     } finally {
       setIsLoading(false);
