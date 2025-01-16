@@ -2,11 +2,13 @@
 import React, { createContext, useState, useEffect } from 'react';
 import Web3 from 'web3';
 import subscriptionABI from '../contracts/SubscriptionManager.json';
+// import dotenv from 'dotenv';
+// dotenv.config();
 
 const AppContext = createContext();
 
 const AVAX_CHAIN_ID = 'a86a';
-const CONTRACT_ADDRESS = '0x4402394519aff2b9e753c67f1b32bf93de184126';
+const CONTRACT_ADDRESS = process.env.CONTRACT_ADDRESS;
 
 // Validate contract address is available
 if (!CONTRACT_ADDRESS) {
