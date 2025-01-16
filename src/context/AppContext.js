@@ -1,12 +1,14 @@
 // frontend/src/context/AppContext.js
 import React, { createContext, useState, useEffect } from 'react';
 import Web3 from 'web3';
-import subscriptionABI from '../contracts/SubscriptionManager.json';
+import SubscriptionManagerABI from '../contracts/SubscriptionManager.json';
+// import dotenv from 'dotenv';
+// dotenv.config();
 
 const AppContext = createContext();
 
 const AVAX_CHAIN_ID = 'a86a';
-const CONTRACT_ADDRESS = '0xe7fd732b53d5570bacff7daea392a9caddb8b9f4';
+const CONTRACT_ADDRESS = process.env.REACT_APP_CONTRACT_ADDRESS;
 
 // Validate contract address is available
 if (!CONTRACT_ADDRESS) {
@@ -68,7 +70,7 @@ export const AppProvider = ({ children }) => {
           setWeb3(web3Instance);
 
           const contractInstance = new web3Instance.eth.Contract(
-            subscriptionABI.abi,
+            SubscriptionManagerABI,
             CONTRACT_ADDRESS
           );
           setContract(contractInstance);
@@ -106,6 +108,7 @@ export const AppProvider = ({ children }) => {
         }
       }
     };
+
     verifyContract();
   }, []);
   // }, [web3, contract, addNotification]);

@@ -9,50 +9,23 @@ A decentralized subscription management system built on Avalanche blockchain, en
    - View subscription details
    - Process payments
    - Automatic renewal tracking
-   - Auto-renew toggle
-   - Subscription cancellation
-   - Multiple subscription plans per service
 
 ➡️ **Wallet Integration**
    - Seamless Core Wallet connection
    - Secure payment processing
    - Real-time balance updates
-   - Address display toggle
 
 ➡️ **Notification System**
    - Expiration alerts
    - Payment confirmations
    - Renewal reminders
-   - Transaction status updates
 
 ➡️ **Service Integration**
    - Nation Media 📰
-     - Daily news access
-     - E-paper access
-     - Premium content
    - Showmax Kenya 🎬
-     - HD streaming
-     - Multiple devices
-     - Offline downloads
    - DSTV 📺
-     - Live channels
-     - Sports packages
-     - Movie bundles
    - Mdundo 🎵
-     - Ad-free music
-     - Offline listening
-     - High-quality audio
    - Elimu Library 📚
-     - E-books access
-     - Study materials
-     - Research papers
-
-➡️ **User Interface**
-   - Dark/Light mode toggle
-   - Responsive design
-   - Service-specific dashboards
-   - Interactive subscription cards
-   - Real-time countdown timers
 
 ## 🛠️ Tech Stack
 - Languages: 
@@ -72,7 +45,6 @@ A decentralized subscription management system built on Avalanche blockchain, en
 - Tools: 
   - <img src="https://img.shields.io/badge/Web3.js-%23F16822.svg?style=flat&logo=web3dotjs&logoColor=white"/>
   - <img src="https://img.shields.io/badge/Core_Wallet-black?style=flat"/>
-  - <img src="https://img.shields.io/badge/Hardhat-yellow?style=flat"/>
 
 ## 🚀 Setup Instructions
 1. Clone repository
@@ -85,14 +57,6 @@ A decentralized subscription management system built on Avalanche blockchain, en
 - Smart contracts deployed on Avalanche C-Chain
 - Utilizing Avalanche's fast finality for instant payment confirmation
 - Low transaction fees for subscription processing
-- Testnet deployment on Fuji C-Chain
-
-## 🔧 Development Features
-- Hardhat integration for smart contract development
-- Automated contract verification
-- Firebase integration for off-chain data
-- Comprehensive test suite
-- Responsive UI with dark mode support
 
 ## 👥 Team
 - Lynn Matini
