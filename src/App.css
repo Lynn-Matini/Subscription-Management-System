@@ -178,30 +178,177 @@ button:disabled {
 
 .subscriptions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
-  margin-top: 20px;
+  padding: 20px;
 }
 
 .subscription-card {
-  background: #ffffff;
-  padding: 15px;
-  border-radius: 8px;
-  transition: transform 0.2s, background-color 0.3s;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s;
 }
 
-.subscription-card.dark {
-  background: #2a2a2a;
-  color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+.subscription-card:hover {
+  transform: translateY(-2px);
+}
+
+.subscription-header {
+  background: #f8f9fa;
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.subscription-header h4 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.2rem;
+}
+
+.plan-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #e9ecef;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: #495057;
+  margin-top: 5px;
+}
+
+.subscription-content {
+  padding: 15px;
+}
+
+.subscription-info {
+  margin-bottom: 15px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.label {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.value {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+}
+
+.status-badge.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.inactive {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.countdown-container {
+  text-align: center;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin: 10px 0;
 }
 
 .card-actions {
   display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .card-actions {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.action-button {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 15px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.payment-button {
+  background: #28a745;
+  color: white;
+}
+
+.payment-button:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.payment-amount {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.cancel-button {
+  background: #dc3545;
+  color: white;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Add hover effect to the entire card */
+.subscription-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.subscription-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .subscription-card:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark .subscription-card {
+  background: #2c3e50;
+  color: #fff;
+}
+
+.dark .subscription-header {
+  background: #34495e;
+}
+
+.dark .subscription-header h4 {
+  color: #fff;
 }
 
 .create-subscription {
@@ -562,7 +709,46 @@ button:disabled {
 }
 
 .dark-mode .subscription-card {
-  background: #2a2a2a;
+  background: #1a1a1a;
+  color: #fff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .subscription-header {
+  background: #2c2c2c;
+  border-bottom-color: #333;
+}
+
+.dark-mode .subscription-header h4 {
+  color: #fff;
+}
+
+.dark-mode .plan-badge {
+  background: #333;
+  color: #fff;
+}
+
+.dark-mode .label {
+  color: #aaa;
+}
+
+.dark-mode .value {
+  color: #fff;
+}
+
+.dark-mode .countdown-container {
+  background: #2c2c2c;
+  color: #fff;
+}
+
+.dark-mode .status-badge.active {
+  background: #1e4620;
+  color: #98c699;
+}
+
+.dark-mode .status-badge.inactive {
+  background: #462020;
+  color: #c69898;
 }
 
 /* Update media queries for better responsive control positioning */
@@ -836,9 +1022,9 @@ button:disabled {
 .countdown-timer {
   display: flex;
   justify-content: center;
-  gap: 1rem;
-  margin: 1rem 0;
-  padding: 1rem;
+  gap: 1.5rem;
+  margin: 0.5rem 0;
+  padding: 0.75rem;
   background: rgba(0, 0, 0, 0.05);
   border-radius: 8px;
 }
@@ -851,13 +1037,14 @@ button:disabled {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 60px;
+  min-width: 70px;
 }
 
 .countdown-value {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: bold;
   color: #007bff;
+  line-height: 1.2;
 }
 
 .dark-mode .countdown-value {
@@ -865,9 +1052,10 @@ button:disabled {
 }
 
 .countdown-label {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: #666;
   text-transform: uppercase;
+  margin-top: 0.25rem;
 }
 
 .dark-mode .countdown-label {
@@ -1036,4 +1224,208 @@ button:disabled {
 
 .dark .create-button:disabled {
   background: #444;
+}
+
+.subscriptions-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.subscriptions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 0 1rem;
+}
+
+.subscriptions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  padding: 1rem;
+}
+
+.subscription-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 300px; /* Set minimum height */
+}
+
+.subscription-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-actions {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .subscriptions-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+
+  .subscription-card {
+    min-height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .subscriptions-container {
+    padding: 0 0.5rem;
+  }
+
+  .subscriptions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .subscription-card {
+    min-height: 200px;
+  }
+}
+
+/* Toggle Switch Styles */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+  background-color: #28a745;
+}
+
+input:disabled + .toggle-slider {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(26px);
+}
+
+.dark-mode .toggle-slider {
+  background-color: #666;
+}
+
+.dark-mode input:checked + .toggle-slider {
+  background-color: #28a745;
+}
+
+/* Button styles */
+.action-button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 60px;
+}
+
+.payment-button {
+  background: #28a745;
+  color: white;
+}
+
+.payment-button:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-1px);
+}
+
+.payment-amount {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.cancel-button {
+  background: #dc3545;
+  color: white;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+.action-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Card layout improvements */
+.subscription-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 350px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.subscription-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.card-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .card-actions {
+  border-top-color: rgba(255, 255, 255, 0.1);
 }

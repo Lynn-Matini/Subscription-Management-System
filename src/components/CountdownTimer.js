@@ -3,55 +3,45 @@ import React, { useState, useEffect } from 'react';
 function CountdownTimer({ timeRemaining }) {
   const [countdown, setCountdown] = useState({
     months: 0,
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
+    days: 0
   });
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const secondsLeft = Math.max(0, timeRemaining);
-      
-      const months = Math.floor(secondsLeft / (30 * 24 * 60 * 60));
-      const days = Math.floor((secondsLeft % (30 * 24 * 60 * 60)) / (24 * 60 * 60));
-      const hours = Math.floor((secondsLeft % (24 * 60 * 60)) / (60 * 60));
-      const minutes = Math.floor((secondsLeft % (60 * 60)) / 60);
-      const seconds = Math.floor(secondsLeft % 60);
+      if (!timeRemaining) return { months: 0, days: 0 };
 
-      return { months, days, hours, minutes, seconds };
+      const secondsInDay = 86400;
+      const secondsInMonth = secondsInDay * 30; // Approximate month as 30 days
+
+      const months = Math.floor(timeRemaining / secondsInMonth);
+      const days = Math.floor((timeRemaining % secondsInMonth) / secondsInDay);
+
+      return {
+        months,
+        days
+      };
     };
+
+    setCountdown(calculateTimeLeft());
 
     const timer = setInterval(() => {
       setCountdown(calculateTimeLeft());
     }, 1000);
-
-    setCountdown(calculateTimeLeft());
 
     return () => clearInterval(timer);
   }, [timeRemaining]);
 
   return (
     <div className="countdown-timer">
-      <div className="countdown-item">
-        <span className="countdown-value">{countdown.months}</span>
-        <span className="countdown-label">Months</span>
-      </div>
+      {countdown.months > 0 && (
+        <div className="countdown-item">
+          <span className="countdown-value">{countdown.months}</span>
+          <span className="countdown-label">{countdown.months === 1 ? 'Month' : 'Months'}</span>
+        </div>
+      )}
       <div className="countdown-item">
         <span className="countdown-value">{countdown.days}</span>
-        <span className="countdown-label">Days</span>
-      </div>
-      <div className="countdown-item">
-        <span className="countdown-value">{countdown.hours}</span>
-        <span className="countdown-label">Hours</span>
-      </div>
-      <div className="countdown-item">
-        <span className="countdown-value">{countdown.minutes}</span>
-        <span className="countdown-label">Min</span>
-      </div>
-      <div className="countdown-item">
-        <span className="countdown-value">{countdown.seconds}</span>
-        <span className="countdown-label">Sec</span>
+        <span className="countdown-label">{countdown.days === 1 ? 'Day' : 'Days'}</span>
       </div>
     </div>
   );
