@@ -162,6 +162,35 @@ function CreateSubscription({ selectedService, selectedPlan }) {
     }
   };
 
+  const getSubscriptionIdFromEvent = (result) => {
+    try {
+      // Look for the SubscriptionCreated event in the transaction logs
+      const event = result.events.SubscriptionCreated;
+      if (event && event.returnValues) {
+        // Return the subscriptionId from the event
+        return event.returnValues.subscriptionId;
+      }
+      // If event is not found in the expected format, try to find it in raw logs
+      const logs = result.logs;
+      if (logs && logs.length > 0) {
+        // Look for the event in raw logs (useful if event name matching fails)
+        const relevantLog = logs.find(log => 
+          log.topics && log.topics[0] && 
+          log.topics[0].toLowerCase().includes('subscription')
+        );
+        if (relevantLog && relevantLog.topics.length > 1) {
+          // Parse the subscription ID from the raw log data
+          return web3.utils.hexToNumber(relevantLog.topics[1]);
+        }
+      }
+      console.error('Could not find SubscriptionCreated event in transaction logs');
+      return null;
+    } catch (error) {
+      console.error('Error extracting subscription ID from event:', error);
+      return null;
+    }
+  };
+
   return (
     <div className={`create-subscription-container ${darkMode ? 'dark' : ''}`}>
       <div className="subscription-header">
