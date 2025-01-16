@@ -100,21 +100,61 @@ function CreateSubscription({ selectedService, selectedPlan }) {
 
       console.log('Transaction result:', result);
       
-      // Get subscription ID from event
-      const subscriptionId = result.events.SubscriptionCreated.returnValues.subscriptionId;
+      // Get subscription ID from transaction logs
+      const subscriptionCreatedEvent = result.events.SubscriptionCreated;
+      console.log('Event data:', subscriptionCreatedEvent); // Debug log
+
+      if (!subscriptionCreatedEvent) {
+        console.error('Events from transaction:', result.events);
+        throw new Error('SubscriptionCreated event not found in transaction');
+      }
+
+      // Replace the current subscription ID extraction with this
+      const subscriptionId = Web3.utils.hexToNumber(subscriptionCreatedEvent.raw.data.slice(0, 66));
       console.log('Created subscription ID:', subscriptionId);
-      
+
+      if (!subscriptionId) {
+        // Custom serializer to handle BigInt values
+        const customStringify = (obj) => {
+          return JSON.stringify(obj, (key, value) => {
+            if (typeof value === 'bigint') {
+              return value.toString();
+            }
+            return value;
+          }, 2);
+        };
+
+        console.error('Full event data:', customStringify(subscriptionCreatedEvent));
+        throw new Error('Invalid subscription ID returned from transaction');
+      }
+
+      // Convert subscription ID to string if it's a BigInt
+      const subscriptionIdString = subscriptionId.toString();
+
       // Get the subscription details from the contract
-      const subscription = await contract.methods.getSubscription(subscriptionId).call();
-      console.log('Fetched subscription:', subscription);
-      
-      await saveUserSubscription(account, {
-        id: subscriptionId,
-        ...subscription
-      }, selectedService, selectedPlan);
-      
-      addNotification(`Subscription created successfully for ${selectedService.name}!`);
-      window.dispatchEvent(new CustomEvent('subscriptionCreated'));
+      try {
+        const subscription = await contract.methods.getSubscription(subscriptionIdString).call();
+        console.log('Raw subscription data:', subscription);
+        
+        await saveUserSubscription(account, {
+          id: subscriptionIdString,
+          price: subscription[0],        // price is first return value
+          duration: subscription[1],     // duration is second return value
+          startTime: subscription[2],    // startTime is third return value
+          subscriber: subscription[3],   // subscriber is fourth return value
+          isActive: subscription[4],     // isActive is fifth return value
+          isCancelled: subscription[5]   // isCancelled is sixth return value
+        }, selectedService, selectedPlan);
+        
+        addNotification(`Subscription created successfully for ${selectedService.name}!`);
+        window.dispatchEvent(new CustomEvent('subscriptionCreated'));
+      } catch (error) {
+        console.error('Error fetching subscription details:', error);
+        throw new Error('Failed to fetch subscription details after creation');
+      }
+
+      console.log('Full transaction result:', JSON.stringify(result, null, 2));
+      console.log('Events:', result.events);
     } catch (error) {
       console.error('Error creating subscription:', error);
       if (error.message.includes('User denied')) {

@@ -19,35 +19,36 @@ export const saveUserToFirestore = async (walletAddress) => {
 export const saveUserSubscription = async (walletAddress, subscription, service, plan) => {
   try {
     console.log('Starting to save subscription to Firestore...');
-    console.log('Subscription data:', { walletAddress, subscription, service, plan });
+    
+    // Convert BigInt values to strings before saving
+    const formattedSubscription = {
+      userId: walletAddress.toLowerCase(),
+      subscriptionId: subscription.id.toString(),
+      serviceId: service.id,
+      planId: plan.id,
+      serviceName: service.name,
+      planName: plan.name,
+      price: subscription.price.toString(),
+      duration: subscription.duration.toString(),
+      startTime: subscription.startTime.toString(),
+      createdAt: new Date().toISOString(),
+      status: 'active'
+    };
+
+    console.log('Formatted subscription data:', formattedSubscription);
     
     const userSubscriptionsRef = collection(db, 'userSubscriptions');
-    console.log('Collection reference created for userSubscriptions');
     
-    // Add retry logic
     let retries = 3;
     while (retries > 0) {
       try {
-        const docRef = await addDoc(userSubscriptionsRef, {
-          userId: walletAddress.toLowerCase(),
-          subscriptionId: subscription.id,
-          serviceId: service.id,
-          planId: plan.id,
-          serviceName: service.name,
-          planName: plan.name,
-          price: subscription.price,
-          duration: subscription.duration,
-          startTime: subscription.startTime,
-          createdAt: new Date().toISOString(),
-          status: 'active'
-        });
+        const docRef = await addDoc(userSubscriptionsRef, formattedSubscription);
         console.log('Subscription saved successfully to Firestore with ID:', docRef.id);
         break;
       } catch (error) {
         console.error('Error in save attempt:', error);
         retries--;
         if (retries === 0) throw error;
-        console.log(`Retrying... ${retries} attempts left`);
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
