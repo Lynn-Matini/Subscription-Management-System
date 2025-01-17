@@ -1,12 +1,20 @@
 import React, { useState, useContext, useEffect } from 'react';
 import AppContext from '../context/AppContext';
-import { saveUserSubscription } from '../firebase/userService';
+import { saveUserSubscription, getUserSubscriptions } from '../firebase/userService';
 import { FaClock, FaCoins } from 'react-icons/fa';
 import Web3 from 'web3';
+import { addDoc, collection } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
-function CreateSubscription({ selectedService, selectedPlan }) {
-  const { contract, account, addNotification, setIsLoading, darkMode, web3 } =
-    useContext(AppContext);
+function CreateSubscription({ selectedService, selectedPlan, onBack }) {
+  const { 
+    account, 
+    addNotification, 
+    setIsLoading,
+    isLoading,
+    darkMode, 
+    web3 
+  } = useContext(AppContext);
   const [subscriptionPrice, setSubscriptionPrice] = useState('');
   const [subscriptionDuration, setSubscriptionDuration] = useState('');
 
@@ -39,141 +47,62 @@ function CreateSubscription({ selectedService, selectedPlan }) {
   };
 
   const createSubscription = async () => {
-    if (!contract || !account) {
+    if (!account) {
       addNotification('Please connect your wallet first');
       return;
     }
 
-    const balance = await checkBalance();
-    if (!balance) return;
+    // Check if user already has an active subscription for this service
+    const existingSubs = await getUserSubscriptions(account, selectedService.id);
+    const hasActiveSubscription = existingSubs.some(sub => 
+      sub.status === 'active' || 
+      sub.status === 'pending' ||
+      (sub.isActive && !sub.isCancelled)
+    );
+
+    if (hasActiveSubscription) {
+      addNotification('You already have an active subscription for this service. Please wait for it to expire or cancel it before creating a new one.');
+      return;
+    }
 
     setIsLoading(true);
     try {
-      console.log('Contract Address:', contract._address);
-      console.log('Account:', account);
-      console.log('Price in Wei:', subscriptionPrice);
-      console.log(
-        'Price in AVAX:',
-        Web3.utils.fromWei(subscriptionPrice, 'ether')
-      );
-      console.log('Duration in seconds:', subscriptionDuration);
+      // Get current local date and time
+      const localStartTime = new Date();
+      const startTimeInSeconds = Math.floor(localStartTime.getTime() / 1000);
+      const durationInSeconds = subscriptionDuration;
+      const endTimeInSeconds = startTimeInSeconds + durationInSeconds;
 
-      // Get contract balance
-      const contractBalance = await web3.eth.getBalance(contract._address);
-      console.log(
-        'Contract balance:',
-        Web3.utils.fromWei(contractBalance, 'ether'),
-        'AVAX'
-      );
+      // Create subscription document in Firestore
+      const subscriptionData = {
+        userId: account.toLowerCase(),
+        serviceId: selectedService.id,
+        serviceName: selectedService.name,
+        planName: selectedPlan.name,
+        price: subscriptionPrice,
+        duration: durationInSeconds,
+        startTime: startTimeInSeconds,
+        endTime: endTimeInSeconds,
+        status: 'inactive', // Initially inactive until payment
+        autoRenew: false, // Disabled by default
+        isCancelled: false,
+        createdAt: localStartTime.toISOString(),
+        updatedAt: localStartTime.toISOString()
+      };
 
-      let gasEstimate;
-      try {
-        gasEstimate = await contract.methods
-          .createSubscription(subscriptionPrice, subscriptionDuration)
-          .estimateGas({
-            from: account,
-          });
-        console.log('Gas estimate successful:', gasEstimate);
-      } catch (gasError) {
-        console.error('Gas estimation failed:', gasError);
-        throw gasError;
-      }
+      // Save to Firestore
+      await addDoc(collection(db, 'userSubscriptions'), subscriptionData);
+      
+      addNotification('Subscription created! Please process payment to activate.');
+      
+      // Dispatch event to refresh subscriptions list
+      window.dispatchEvent(new CustomEvent('subscriptionCreated'));
 
-      const gasLimit = Math.floor(Number(gasEstimate) * 1.3);
-
-      const result = await contract.methods
-        .createSubscription(subscriptionPrice, subscriptionDuration)
-        .send({
-          from: account,
-          gasLimit: gasLimit,
-        });
-
-      console.log('Transaction result:', result);
-
-      // Wait for a few blocks to ensure the subscription is created
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      const subscriptionId = getSubscriptionIdFromEvent(result);
-
-      if (subscriptionId !== null) {
-        console.log('Created subscription ID:', subscriptionId);
-
-        try {
-          // Wrap the getSubscription call in a try-catch block
-          let subscription;
-          try {
-            subscription = await contract.methods
-              .getSubscription(subscriptionId)
-              .call();
-          } catch (error) {
-            console.error('Error in getSubscription call:', error);
-            // Create a minimal subscription object if the call fails
-            subscription = {
-              price: subscriptionPrice,
-              duration: subscriptionDuration,
-              startTime: Math.floor(Date.now() / 1000),
-              subscriber: account,
-              isActive: true,
-              isCancelled: false,
-            };
-          }
-
-          console.log('Fetched subscription:', subscription);
-
-          // Format the subscription data before saving
-          const formattedSubscription = {
-            id: subscriptionId,
-            price: subscription.price.toString(),
-            duration: subscription.duration.toString(),
-            startTime: subscription.startTime.toString(),
-            subscriber: subscription.subscriber,
-            isActive: subscription.isActive,
-            isCancelled: subscription.isCancelled,
-          };
-
-          await saveUserSubscription(
-            account,
-            formattedSubscription,
-            selectedService,
-            selectedPlan
-          );
-
-          addNotification(
-            `Subscription created successfully for ${selectedService.name}!`
-          );
-          window.dispatchEvent(new CustomEvent('subscriptionCreated'));
-        } catch (fetchError) {
-          console.error('Error handling subscription details:', fetchError);
-          addNotification(
-            'Subscription created, but details could not be saved properly.'
-          );
-        }
-      } else {
-        console.error('Could not get subscription ID from event.');
-        addNotification('Subscription creation failed. Could not retrieve ID.');
-      }
+      // Go back to plans view
+      onBack();
     } catch (error) {
       console.error('Error creating subscription:', error);
-      let errorMessage = 'Error creating subscription. Please try again.';
-
-      if (error.message.includes('User denied transaction signature')) {
-        errorMessage = 'Transaction was cancelled';
-      } else if (error.message.includes('insufficient funds')) {
-        errorMessage = 'Insufficient AVAX balance';
-      } else if (error.message.includes('execution reverted')) {
-        try {
-          const revertReason = error.data.message.substring(
-            error.data.message.indexOf('reverted: ') + 'reverted: '.length
-          );
-          errorMessage = `Transaction reverted: ${revertReason}`;
-        } catch (e) {
-          errorMessage = 'Transaction reverted. Please check your input.';
-        }
-      } else if (error.message.includes('Internal JSON-RPC error.')) {
-        errorMessage = 'Network error. Please try again later.';
-      }
-
-      addNotification(errorMessage);
+      addNotification('Error creating subscription');
     } finally {
       setIsLoading(false);
     }
@@ -254,7 +183,7 @@ function CreateSubscription({ selectedService, selectedPlan }) {
         <button
           onClick={createSubscription}
           className="create-button"
-          disabled={!contract}
+          disabled={isLoading}
         >
           Confirm Subscription
         </button>
