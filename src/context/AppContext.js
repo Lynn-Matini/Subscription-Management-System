@@ -1,9 +1,7 @@
 // frontend/src/context/AppContext.js
 import React, { createContext, useState, useEffect } from 'react';
 import Web3 from 'web3';
-import SubscriptionManagerABI from '../contracts/SubscriptionManager.json';
-// import dotenv from 'dotenv';
-// dotenv.config();
+import SubscriptionManagerABI from '../SubscriptionManager.json';
 
 const AppContext = createContext();
 
