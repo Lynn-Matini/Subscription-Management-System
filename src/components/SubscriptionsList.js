@@ -1,9 +1,21 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import AppContext from '../context/AppContext';
-import { getUserSubscriptions, updateSubscriptionAutoRenew, deleteSubscription } from '../firebase/userService';
+import {
+  getUserSubscriptions,
+  updateSubscriptionAutoRenew,
+  deleteSubscription,
+} from '../firebase/userService';
 import CountdownTimer from './CountdownTimer';
 import Web3 from 'web3';
 import { FaTrash } from 'react-icons/fa';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+} from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 function SubscriptionsList({ selectedService }) {
   const {
@@ -30,14 +42,18 @@ function SubscriptionsList({ selectedService }) {
       setIsLoading(true);
       try {
         // Fetch subscriptions for specific service
-        const firestoreSubs = await getUserSubscriptions(account, selectedService.id);
-        
+        const firestoreSubs = await getUserSubscriptions(
+          account,
+          selectedService.id
+        );
+
         // Format the subscriptions
-        const formattedSubs = firestoreSubs.map(sub => ({
+        const formattedSubs = firestoreSubs.map((sub) => ({
           ...sub,
-          price: (typeof window !== 'undefined' && window.BigInt) 
-            ? window.BigInt(sub.price || 0).toString() 
-            : sub.price || '0',
+          price:
+            typeof window !== 'undefined' && window.BigInt
+              ? window.BigInt(sub.price || 0).toString()
+              : sub.price || '0',
           duration: parseInt(sub.duration || 0),
           startTime: parseInt(sub.startTime || 0),
           subscriptionId: sub.subscriptionId || '0',
@@ -46,10 +62,13 @@ function SubscriptionsList({ selectedService }) {
             parseInt(sub.startTime || 0),
             parseInt(sub.duration || 0)
           ),
-          autoRenew: sub.autoRenew || false
+          autoRenew: sub.autoRenew || false,
         }));
 
-        console.log(`Formatted subscriptions for ${selectedService.name}:`, formattedSubs);
+        console.log(
+          `Formatted subscriptions for ${selectedService.name}:`,
+          formattedSubs
+        );
         setSubscriptions(formattedSubs);
         setLastFetchTime(now);
       } catch (error) {
@@ -84,14 +103,81 @@ function SubscriptionsList({ selectedService }) {
   const processPayment = async (subscriptionId, price) => {
     setIsLoading(true);
     try {
-      await contract.methods
+      console.log('Processing payment for subscription:', subscriptionId);
+      console.log('Payment amount (raw):', price);
+
+      // Get the subscription details from the contract to verify the price
+      const subscription = await contract.methods
+        .getSubscription(subscriptionId)
+        .call();
+      console.log('Subscription from contract:', subscription);
+
+      // Ensure we're using the correct price from the contract
+      const correctPrice = subscription.price.toString();
+      console.log('Correct price from contract:', correctPrice);
+
+      // First estimate the gas
+      let gasEstimate;
+      try {
+        gasEstimate = await contract.methods
+          .processPayment(subscriptionId)
+          .estimateGas({
+            from: account,
+            value: correctPrice, // Use the price from the contract
+          });
+        console.log('Gas estimate:', gasEstimate);
+      } catch (gasError) {
+        console.error('Gas estimation failed:', gasError);
+        throw new Error('Failed to estimate gas. The transaction might fail.');
+      }
+
+      // Add 30% buffer to gas estimate
+      const gasLimit = Math.floor(Number(gasEstimate) * 1.3);
+
+      // Send the transaction with the calculated gas limit
+      const result = await contract.methods
         .processPayment(subscriptionId)
-        .send({ from: account, value: price });
+        .send({
+          from: account,
+          value: correctPrice, // Use the price from the contract
+          gas: gasLimit,
+        });
+
+      console.log('Payment transaction result:', result);
+
+      // Update the subscription status in Firebase
+      const q = query(
+        collection(db, 'userSubscriptions'),
+        where('userId', '==', account.toLowerCase()),
+        where('subscriptionId', '==', subscriptionId.toString())
+      );
+
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const docRef = querySnapshot.docs[0].ref;
+        await updateDoc(docRef, {
+          status: 'active',
+          isActive: true,
+          startTime: subscription.startTime.toString(),
+          updatedAt: new Date().toISOString(),
+        });
+      }
+
       addNotification('Payment processed successfully!');
       setTimeout(() => fetchSubscriptions(true), 2000);
     } catch (error) {
       console.error('Error processing payment:', error);
-      addNotification('Error processing payment. Please try again.');
+      let errorMessage = 'Error processing payment.';
+
+      if (error.message.includes('Incorrect payment amount')) {
+        errorMessage = 'Payment amount does not match subscription price';
+      } else if (error.message.includes('insufficient funds')) {
+        errorMessage = 'Insufficient AVAX balance';
+      } else if (error.message.includes('User denied')) {
+        errorMessage = 'Transaction was cancelled';
+      }
+
+      addNotification(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -158,7 +244,10 @@ function SubscriptionsList({ selectedService }) {
     window.addEventListener('subscriptionCreated', handleSubscriptionCreated);
 
     return () => {
-      window.removeEventListener('subscriptionCreated', handleSubscriptionCreated);
+      window.removeEventListener(
+        'subscriptionCreated',
+        handleSubscriptionCreated
+      );
     };
   }, [fetchSubscriptions, selectedService]);
 
@@ -166,7 +255,10 @@ function SubscriptionsList({ selectedService }) {
     <div className="subscriptions-container">
       <div className="subscriptions-header">
         <h3>{selectedService.name} Subscriptions</h3>
-        <button onClick={() => fetchSubscriptions(true)} className="refresh-button">
+        <button
+          onClick={() => fetchSubscriptions(true)}
+          className="refresh-button"
+        >
           Refresh
         </button>
       </div>
@@ -181,11 +273,16 @@ function SubscriptionsList({ selectedService }) {
       ) : (
         <div className="subscriptions-grid">
           {subscriptions.map((sub) => (
-            <div key={sub.id} className={`subscription-card ${darkMode ? 'dark-mode' : ''}`}>
+            <div
+              key={sub.id}
+              className={`subscription-card ${darkMode ? 'dark-mode' : ''}`}
+            >
               <div className="subscription-header">
                 <div className="header-content">
                   <h4>{sub.serviceName || 'Unknown Service'}</h4>
-                  <span className="plan-badge">{sub.planName || 'Unknown Plan'}</span>
+                  <span className="plan-badge">
+                    {sub.planName || 'Unknown Plan'}
+                  </span>
                 </div>
                 {!sub.isActive && (
                   <button
@@ -198,7 +295,7 @@ function SubscriptionsList({ selectedService }) {
                   </button>
                 )}
               </div>
-              
+
               <div className="subscription-content">
                 <div className="subscription-info">
                   <div className="info-item">
@@ -211,7 +308,11 @@ function SubscriptionsList({ selectedService }) {
                   </div>
                   <div className="info-item">
                     <span className="label">Status:</span>
-                    <span className={`status-badge ${sub.isActive ? 'active' : 'inactive'}`}>
+                    <span
+                      className={`status-badge ${
+                        sub.isActive ? 'active' : 'inactive'
+                      }`}
+                    >
                       {sub.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
@@ -221,7 +322,9 @@ function SubscriptionsList({ selectedService }) {
                       <input
                         type="checkbox"
                         checked={sub.autoRenew}
-                        onChange={() => handleAutoRenewToggle(sub.id, !sub.autoRenew)}
+                        onChange={() =>
+                          handleAutoRenewToggle(sub.id, !sub.autoRenew)
+                        }
                         disabled={isLoading}
                       />
                       <span className="toggle-slider"></span>
@@ -239,11 +342,15 @@ function SubscriptionsList({ selectedService }) {
                 <div className="card-actions">
                   {!sub.isActive && (
                     <button
-                      onClick={() => processPayment(sub.subscriptionId, sub.price)}
+                      onClick={() =>
+                        processPayment(sub.subscriptionId, sub.price)
+                      }
                       disabled={isLoading}
                       className="action-button payment-button"
                     >
-                      <span className="payment-amount">{formatPrice(sub.price)} AVAX</span>
+                      <span className="payment-amount">
+                        {formatPrice(sub.price)} AVAX
+                      </span>
                       <span>Pay Now</span>
                     </button>
                   )}

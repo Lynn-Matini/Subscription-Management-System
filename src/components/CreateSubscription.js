@@ -1,7 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import AppContext from '../context/AppContext';
 import { saveUserSubscription } from '../firebase/userService';
-import { FaArrowLeft, FaClock, FaCoins } from 'react-icons/fa';
+import { FaClock, FaCoins } from 'react-icons/fa';
 import Web3 from 'web3';
 
 function CreateSubscription({ selectedService, selectedPlan }) {
