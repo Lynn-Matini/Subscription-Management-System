@@ -80,11 +80,45 @@ A decentralized subscription management system built on Avalanche blockchain, en
 
 ## 🚀 Setup Instructions
 
-1. Clone repository
-2. Install dependencies: `npm install`
-3. Deploy smart contract & obtain contract address to be stored in `.env`
-4. Set up Firebase configuration in `.env`
-5. Start development server: `npm start`
+1. 📥 Clone the repository:
+
+   git clone <repository-url>
+   cd <repository-directory>
+
+
+2. 📦 Install dependencies:
+
+   npm install
+
+
+3. 🔗 Deploy the smart contract:
+   - Ensure your `.env` file contains your private key:
+
+     PRIVATE_KEY=your_private_key_here
+
+   - Deploy the contract to the Fuji test network:
+
+     npx hardhat run scripts/deploy.js --network fuji
+
+   - The deployment script will automatically append the contract address to your `.env` file as `REACT_APP_CONTRACT_ADDRESS`.
+
+4. 🔥 Set up Firebase configuration in `.env`:
+   - Add your Firebase configuration details:
+     
+     REACT_APP_FIREBASE_API_KEY=your_firebase_api_key
+     REACT_APP_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+     REACT_APP_FIREBASE_PROJECT_ID=your_firebase_project_id
+     REACT_APP_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+     REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
+     REACT_APP_FIREBASE_APP_ID=your_firebase_app_id
+     
+
+5. 🏃‍♂️ Start the development server:
+  
+   npm start
+
+
+6. 🌐 Access the application in your browser at `http://localhost:3000`.
 
 ## ⛰️ Avalanche Integration
 
@@ -111,3 +145,11 @@ A decentralized subscription management system built on Avalanche blockchain, en
 - Secure wallet connections
 - Protected Firebase configuration
 - Smart contract security measures
+
+## 🛠️ Recent Updates
+
+- Updated to use Node.js 18 for compatibility with Hardhat.
+- Implemented a new subscription management system with features like auto-renewal toggle and payment processing.
+- Integrated Core Wallet for seamless user experience.
+- Enhanced user interface with dark/light mode toggle and responsive design.
+- Improved network verification to ensure secure transactions on the Avalanche Fuji C-Chain.
