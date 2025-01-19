@@ -1,4 +1,4 @@
-🔄 Subscription Management System
+# 🔄 Subscription Management System
 
 ## 📝 Description
 
@@ -136,8 +136,8 @@ A decentralized subscription management system built on Avalanche blockchain, en
 
 ## 👥 Team
 
-- Lynn Matini
-- Aristo Ayako
+- Lynn Matini - FullStack Developer
+- Aristo Ayako - FullStack Developer
 
 ## 🔒 Security Features
 
