@@ -13,13 +13,36 @@ import SubscriptionPlans from './components/SubscriptionPlans';
 import { seedSubscriptionPlans } from './firebase/seedData';
 
 function App() {
-  const { account, darkMode, setDarkMode, notifications } = useContext(AppContext);
+  const { account, darkMode, setDarkMode, notifications, addNotification } = useContext(AppContext);
   const [selectedService, setSelectedService] = useState(null);
   const [showFullAddress, setShowFullAddress] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
 
   useEffect(() => {
-    seedSubscriptionPlans().catch(console.error);
+    // Validate Firebase configuration
+    const requiredEnvVars = [
+      'REACT_APP_FIREBASE_API_KEY',
+      'REACT_APP_FIREBASE_AUTH_DOMAIN',
+      'REACT_APP_FIREBASE_PROJECT_ID',
+      'REACT_APP_FIREBASE_STORAGE_BUCKET',
+      'REACT_APP_FIREBASE_MESSAGING_SENDER_ID',
+      'REACT_APP_FIREBASE_APP_ID'
+    ];
+
+    const missingEnvVars = requiredEnvVars.filter(
+      varName => !process.env[varName]
+    );
+
+    if (missingEnvVars.length > 0) {
+      console.error('Missing required environment variables:', missingEnvVars);
+      addNotification('Error: Missing Firebase configuration');
+      return;
+    }
+
+    seedSubscriptionPlans().catch(error => {
+      console.error('Error seeding data:', error);
+      addNotification('Error initializing application data');
+    });
   }, []);
 
   const handleBack = () => {

@@ -212,6 +212,21 @@ const subscriptionPlans = [
   }
 ];
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
+const retryOperation = async (operation, retries = MAX_RETRIES) => {
+  try {
+    return await operation();
+  } catch (error) {
+    if (retries > 0) {
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+      return retryOperation(operation, retries - 1);
+    }
+    throw error;
+  }
+};
+
 // Function to clear existing plans
 const clearExistingPlans = async () => {
   try {
@@ -233,47 +248,37 @@ const clearExistingPlans = async () => {
 
 // Function to seed subscription plans
 export const seedSubscriptionPlans = async () => {
-  try {
-    // Always clear existing plans first
-    await clearExistingPlans();
+  if (!db) {
+    console.error('Firebase not initialized');
+    return;
+  }
 
-    // Verify we have exactly 15 plans (3 plans for each of 5 services)
+  try {
+    // Verify we have exactly 15 plans
     if (subscriptionPlans.length !== 15) {
       throw new Error(`Expected 15 subscription plans, but found ${subscriptionPlans.length}`);
     }
 
-    // Add metadata to each plan
-    const plansToSeed = subscriptionPlans.map(plan => ({
-      ...plan,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }));
+    // Use batch write with retry logic
+    await retryOperation(async () => {
+      const batch = writeBatch(db);
+      const plansRef = collection(db, 'subscriptionPlans');
 
-    // Use batch write for atomic operation
-    const plansRef = collection(db, 'subscriptionPlans');
-    const batch = writeBatch(db);
+      // Add each plan with a unique document ID
+      subscriptionPlans.forEach(plan => {
+        const uniqueId = `service${plan.serviceId}_${plan.name.toLowerCase().replace(/\s+/g, '_')}`;
+        const docRef = doc(plansRef, uniqueId);
+        batch.set(docRef, {
+          ...plan,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      });
 
-    // Add each plan with a unique document ID
-    plansToSeed.forEach(plan => {
-      // Create a unique document ID based on service and plan name
-      const uniqueId = `service${plan.serviceId}_${plan.name.toLowerCase().replace(/\s+/g, '_')}`;
-      const docRef = doc(plansRef, uniqueId);
-      batch.set(docRef, plan);
+      await batch.commit();
     });
 
-    // Commit the batch
-    await batch.commit();
-    console.log(`Successfully seeded ${plansToSeed.length} subscription plans`);
-
-    // Verify the number of plans in Firestore
-    const verificationSnapshot = await getDocs(plansRef);
-    const actualCount = verificationSnapshot.size;
-    console.log(`Verification: ${actualCount} plans in database`);
-    
-    if (actualCount !== 15) {
-      console.error(`Warning: Expected 15 plans, but found ${actualCount} in database`);
-    }
-
+    console.log('Successfully seeded subscription plans');
   } catch (error) {
     console.error('Error seeding subscription plans:', error);
     throw error;
