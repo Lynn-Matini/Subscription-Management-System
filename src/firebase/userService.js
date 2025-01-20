@@ -4,9 +4,22 @@ import { db } from './config';
 // Create or update user in Firestore when they connect wallet
 export const saveUserToFirestore = async (walletAddress) => {
   try {
-    const userRef = doc(db, 'users', walletAddress.toLowerCase());
+    if (!walletAddress) {
+      console.error('Invalid wallet address');
+      return;
+    }
+
+    // Sanitize the wallet address
+    const sanitizedAddress = walletAddress.toLowerCase().trim();
+    
+    // Ensure the path is valid
+    if (!db) {
+      throw new Error('Firebase database not initialized');
+    }
+
+    const userRef = doc(db, 'users', sanitizedAddress);
     await setDoc(userRef, {
-      walletAddress: walletAddress.toLowerCase(),
+      walletAddress: sanitizedAddress,
       lastConnected: new Date().toISOString(),
     }, { merge: true });
   } catch (error) {

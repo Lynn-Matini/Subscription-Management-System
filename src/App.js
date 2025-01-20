@@ -11,6 +11,7 @@ import ServiceIcons from './components/ServiceIcons';
 import { FaMoon, FaSun, FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import { seedSubscriptionPlans } from './firebase/seedData';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const { account, darkMode, setDarkMode, notifications, addNotification } = useContext(AppContext);
@@ -65,79 +66,81 @@ function App() {
   };
 
   return (
-    <div className={`App ${darkMode ? 'dark-mode' : ''}`}>
-      <div className="top-bar">
-        {account && (selectedService || selectedPlan) && (
-          <button 
-            className="icon-button back-button"
-            onClick={handleBack}
-            aria-label={selectedPlan ? "Back to plans" : "Back to services"}
-          >
-            <FaArrowLeft />
-          </button>
-        )}
-        <div className="logo">
-          <h1>Subscription Manager</h1>
+    <ErrorBoundary>
+      <div className={`App ${darkMode ? 'dark-mode' : ''}`}>
+        <div className="top-bar">
+          {account && (selectedService || selectedPlan) && (
+            <button 
+              className="icon-button back-button"
+              onClick={handleBack}
+              aria-label={selectedPlan ? "Back to plans" : "Back to services"}
+            >
+              <FaArrowLeft />
+            </button>
+          )}
+          <div className="logo">
+            <h1>Subscription Manager</h1>
+          </div>
+          <div className="controls">
+            <button 
+              className="icon-button"
+              onClick={() => setDarkMode(!darkMode)}
+              aria-label="Toggle dark mode"
+            >
+              {darkMode ? <FaSun /> : <FaMoon />}
+            </button>
+            <ConnectWallet />
+          </div>
         </div>
-        <div className="controls">
-          <button 
-            className="icon-button"
-            onClick={() => setDarkMode(!darkMode)}
-            aria-label="Toggle dark mode"
-          >
-            {darkMode ? <FaSun /> : <FaMoon />}
-          </button>
-          <ConnectWallet />
-        </div>
-      </div>
 
-      <main className="main-content">
-        {!account ? (
-          <div className="welcome-screen">
-            <h2>Welcome to Subscription Manager</h2>
-            <p>Connect your wallet to manage subscriptions</p>
-            <ServiceIcons onServiceSelect={setSelectedService} />
-          </div>
-        ) : (
-          <div>
-            <div className="account-info-container">
-              <p className="account-info">
-                Connected: {formatAddress(account)}
-                <button
-                  className="icon-button address-toggle"
-                  onClick={() => setShowFullAddress(!showFullAddress)}
-                  aria-label="Toggle address visibility"
-                >
-                  {showFullAddress ? <FaEyeSlash /> : <FaEye />}
-                </button>
-              </p>
-            </div>
-            {selectedService ? (
-              <>
-                {!selectedPlan ? (
-                  <SubscriptionPlans 
-                    selectedService={selectedService}
-                    onSelectPlan={handleSelectPlan}
-                  />
-                ) : (
-                  <>
-                    <CreateSubscription 
-                      selectedService={selectedService}
-                      selectedPlan={selectedPlan}
-                      onBack={() => setSelectedPlan(null)}
-                    />
-                    <SubscriptionsList selectedService={selectedService} />
-                  </>
-                )}
-              </>
-            ) : (
+        <main className="main-content">
+          {!account ? (
+            <div className="welcome-screen">
+              <h2>Welcome to Subscription Manager</h2>
+              <p>Connect your wallet to manage subscriptions</p>
               <ServiceIcons onServiceSelect={setSelectedService} />
-            )}
-          </div>
-        )}
-        <Notifications notifications={notifications} />
-      </main>
-    </div>
+            </div>
+          ) : (
+            <div>
+              <div className="account-info-container">
+                <p className="account-info">
+                  Connected: {formatAddress(account)}
+                  <button
+                    className="icon-button address-toggle"
+                    onClick={() => setShowFullAddress(!showFullAddress)}
+                    aria-label="Toggle address visibility"
+                  >
+                    {showFullAddress ? <FaEyeSlash /> : <FaEye />}
+                  </button>
+                </p>
+              </div>
+              {selectedService ? (
+                <>
+                  {!selectedPlan ? (
+                    <SubscriptionPlans 
+                      selectedService={selectedService}
+                      onSelectPlan={handleSelectPlan}
+                    />
+                  ) : (
+                    <>
+                      <CreateSubscription 
+                        selectedService={selectedService}
+                        selectedPlan={selectedPlan}
+                        onBack={() => setSelectedPlan(null)}
+                      />
+                      <SubscriptionsList selectedService={selectedService} />
+                    </>
+                  )}
+                </>
+              ) : (
+                <ServiceIcons onServiceSelect={setSelectedService} />
+              )}
+            </div>
+          )}
+          <Notifications notifications={notifications} />
+        </main>
+      </div>
+    </ErrorBoundary>
   );
 }
 
