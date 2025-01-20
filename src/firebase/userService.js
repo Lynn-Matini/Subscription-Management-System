@@ -1,5 +1,5 @@
 import { doc, setDoc, collection, query, where, getDocs, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from './config';
+import { db, getDb } from './config';
 
 // Create or update user in Firestore when they connect wallet
 export const saveUserToFirestore = async (walletAddress) => {
@@ -9,19 +9,18 @@ export const saveUserToFirestore = async (walletAddress) => {
       return;
     }
 
-    // Sanitize the wallet address
     const sanitizedAddress = walletAddress.toLowerCase().trim();
+    const database = getDb(); // Use the new getter function
     
-    // Ensure the path is valid
-    if (!db) {
-      throw new Error('Firebase database not initialized');
-    }
-
-    const userRef = doc(db, 'users', sanitizedAddress);
+    console.log('Attempting to save user:', sanitizedAddress);
+    
+    const userRef = doc(database, 'users', sanitizedAddress);
     await setDoc(userRef, {
       walletAddress: sanitizedAddress,
       lastConnected: new Date().toISOString(),
     }, { merge: true });
+    
+    console.log('User saved successfully');
   } catch (error) {
     console.error('Error saving user:', error);
     throw error;
