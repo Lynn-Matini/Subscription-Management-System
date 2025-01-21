@@ -209,6 +209,45 @@ const subscriptionPlans = [
       "25% discount",
       "Exclusive webinars"
     ]
+  },
+
+  // Test Service Plans (2-minute durations)
+  {
+    serviceId: 6,
+    name: "2 Minutes",
+    price: "0.005",
+    duration: 0.00139, // 2 minutes in days
+    features: [
+      "Quick test plan",
+      "2-minute duration",
+      "Auto-renewal testing",
+      "Basic features"
+    ]
+  },
+  {
+    serviceId: 6,
+    name: "4 Minutes",
+    price: "0.008",
+    duration: 0.00278, // 4 minutes in days
+    features: [
+      "All 2-minute features",
+      "4-minute duration",
+      "Premium test features",
+      "15% discount"
+    ]
+  },
+  {
+    serviceId: 6,
+    name: "6 Minutes",
+    price: "0.01",
+    duration: 0.00417, // 6 minutes in days
+    features: [
+      "All 4-minute features",
+      "6-minute duration",
+      "Advanced test features",
+      "25% discount",
+      "Priority support"
+    ]
   }
 ];
 
@@ -254,9 +293,9 @@ export const seedSubscriptionPlans = async () => {
   }
 
   try {
-    // Verify we have exactly 15 plans
-    if (subscriptionPlans.length !== 15) {
-      throw new Error(`Expected 15 subscription plans, but found ${subscriptionPlans.length}`);
+    // Verify we have exactly 18 plans
+    if (subscriptionPlans.length !== 18) {
+      throw new Error(`Expected 18 subscription plans, but found ${subscriptionPlans.length}`);
     }
 
     // Use batch write with retry logic

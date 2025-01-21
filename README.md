@@ -52,6 +52,11 @@ A decentralized subscription management system built on Avalanche blockchain, en
   - Educational resources
   - Research tools
   - Citation management
+- Test Service 🧪
+  - Quick test plans
+  - 2-minute durations
+  - Auto-renewal testing
+  - Instant feedback
 
 ## 🛠️ Tech Stack
 

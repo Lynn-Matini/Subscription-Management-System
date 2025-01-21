@@ -3,7 +3,7 @@ import AppContext from '../context/AppContext';
 import { saveUserSubscription, getUserSubscriptions } from '../firebase/userService';
 import { FaClock, FaCoins } from 'react-icons/fa';
 import Web3 from 'web3';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 function CreateSubscription({ selectedService, selectedPlan, onBack }) {
@@ -46,22 +46,34 @@ function CreateSubscription({ selectedService, selectedPlan, onBack }) {
     }
   };
 
+  const checkExistingSubscription = async () => {
+    try {
+      const q = query(
+        collection(db, 'userSubscriptions'),
+        where('userId', '==', account.toLowerCase()),
+        where('serviceId', '==', selectedService.id),
+        where('status', 'in', ['active', 'pending']),
+        where('isCancelled', '==', false)
+      );
+
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty;
+    } catch (error) {
+      console.error('Error checking existing subscription:', error);
+      return false;
+    }
+  };
+
   const createSubscription = async () => {
     if (!account) {
       addNotification('Please connect your wallet first');
       return;
     }
 
-    // Check if user already has an active subscription for this service
-    const existingSubs = await getUserSubscriptions(account, selectedService.id);
-    const hasActiveSubscription = existingSubs.some(sub => 
-      sub.status === 'active' || 
-      sub.status === 'pending' ||
-      (sub.isActive && !sub.isCancelled)
-    );
-
-    if (hasActiveSubscription) {
-      addNotification('You already have an active subscription for this service. Please wait for it to expire or cancel it before creating a new one.');
+    // Check for existing active subscription
+    const hasExistingSubscription = await checkExistingSubscription();
+    if (hasExistingSubscription) {
+      addNotification('You already have an active subscription for this service');
       return;
     }
 
@@ -84,10 +96,11 @@ function CreateSubscription({ selectedService, selectedPlan, onBack }) {
         startTime: startTimeInSeconds,
         endTime: endTimeInSeconds,
         status: 'inactive', // Initially inactive until payment
-        autoRenew: false, // Disabled by default
+        autoRenew: true, // Set default to true for test service
         isCancelled: false,
         createdAt: localStartTime.toISOString(),
-        updatedAt: localStartTime.toISOString()
+        updatedAt: localStartTime.toISOString(),
+        lastRenewalTime: startTimeInSeconds
       };
 
       // Save to Firestore
@@ -97,9 +110,6 @@ function CreateSubscription({ selectedService, selectedPlan, onBack }) {
       
       // Dispatch event to refresh subscriptions list
       window.dispatchEvent(new CustomEvent('subscriptionCreated'));
-
-      // Go back to plans view
-      onBack();
     } catch (error) {
       console.error('Error creating subscription:', error);
       addNotification('Error creating subscription');

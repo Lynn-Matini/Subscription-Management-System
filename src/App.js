@@ -3,7 +3,6 @@ import React, { useContext, useState, useEffect } from 'react';
 import './App.css';
 import AppContext from './context/AppContext';
 import CreateSubscription from './components/CreateSubscription';
-import SubscriptionDetails from './components/SubscriptionDetails';
 import SubscriptionsList from './components/SubscriptionsList';
 import Notifications from './components/Notifications';
 import ConnectWallet from './components/ConnectWallet';
@@ -12,6 +11,7 @@ import { FaMoon, FaSun, FaArrowLeft, FaEye, FaEyeSlash } from 'react-icons/fa';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import { seedSubscriptionPlans } from './firebase/seedData';
 import ErrorBoundary from './components/ErrorBoundary';
+import SubscriptionMonitor from './components/SubscriptionMonitor';
 
 function App() {
   const { account, darkMode, setDarkMode, notifications, addNotification } = useContext(AppContext);
@@ -44,7 +44,7 @@ function App() {
       console.error('Error seeding data:', error);
       addNotification('Error initializing application data');
     });
-  }, []);
+  }, [addNotification]);
 
   const handleBack = () => {
     if (selectedPlan) {
@@ -68,6 +68,7 @@ function App() {
   return (
     <ErrorBoundary>
       <div className={`App ${darkMode ? 'dark-mode' : ''}`}>
+        <SubscriptionMonitor />
         <div className="top-bar">
           {account && (selectedService || selectedPlan) && (
             <button 
@@ -116,12 +117,7 @@ function App() {
               </div>
               {selectedService ? (
                 <>
-                  {!selectedPlan ? (
-                    <SubscriptionPlans 
-                      selectedService={selectedService}
-                      onSelectPlan={handleSelectPlan}
-                    />
-                  ) : (
+                  {selectedPlan ? (
                     <>
                       <CreateSubscription 
                         selectedService={selectedService}
@@ -130,6 +126,11 @@ function App() {
                       />
                       <SubscriptionsList selectedService={selectedService} />
                     </>
+                  ) : (
+                    <SubscriptionPlans 
+                      selectedService={selectedService}
+                      onSelectPlan={handleSelectPlan}
+                    />
                   )}
                 </>
               ) : (

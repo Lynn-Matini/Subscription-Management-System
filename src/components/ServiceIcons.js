@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaNewspaper, FaVideo, FaCode, FaMusic, FaGraduationCap } from 'react-icons/fa';
+import { FaNewspaper, FaVideo, FaCode, FaMusic, FaGraduationCap, FaFlask } from 'react-icons/fa';
 
 function ServiceIcons({ onServiceSelect }) {
   const services = [
@@ -37,6 +37,13 @@ function ServiceIcons({ onServiceSelect }) {
       type: "saas",
       icon: <FaGraduationCap />,
       description: "Educational content platform"
+    },
+    {
+      id: 6,
+      name: "Test Service",
+      type: "test",
+      icon: <FaFlask />,
+      description: "Test subscription service (2-min plans)"
     }
   ];
 
