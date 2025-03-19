@@ -1,6 +1,6 @@
 # 🔄 Subscription Management System
 
-## 📝 Description
+### 📝 Description
 
 A decentralized subscription management system built on Avalanche blockchain, enabling automated recurring payments and subscription management for SaaS, newsletters, and streaming platforms.
 
